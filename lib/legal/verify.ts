@@ -91,6 +91,12 @@ export function checkQuote(quote: string, passageText: string): QuoteCheck {
         bestLen = len;
       }
     }
+  // A near-match that changes negation ("not" -> "now") reverses meaning.
+  if (
+    best >= FUZZY_THRESHOLD &&
+    negations(qw) !== negations(pw.slice(bestStart, bestStart + bestLen))
+  )
+    return { status: "mismatch", similarity: round(best), span: null };
   if (best >= FUZZY_THRESHOLD) {
     const start = pw.slice(0, bestStart).join(" ").length + (bestStart ? 1 : 0);
     const end =
@@ -98,6 +104,26 @@ export function checkQuote(quote: string, passageText: string): QuoteCheck {
     return { status: "fuzzy", similarity: round(best), span: [start, end] };
   }
   return { status: "mismatch", similarity: round(best), span: null };
+}
+
+const NEGATIONS = new Set([
+  "not",
+  "no",
+  "never",
+  "nor",
+  "neither",
+  "cannot",
+  "without",
+  "unless",
+  "except",
+]);
+
+/** Negation words, in order, incl. contractions like "isn't". */
+function negations(ws: string[]): string {
+  return ws
+    .map((w) => w.replace(/[^a-z']/g, ""))
+    .filter((w) => NEGATIONS.has(w) || w.endsWith("n't"))
+    .join(" ");
 }
 
 const round = (n: number) => Math.round(n * 1000) / 1000;

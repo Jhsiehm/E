@@ -16,6 +16,7 @@ import {
   type CitationRef,
   type CitationResolution,
   type LegalProviderAdapter,
+  type Provenance,
   type ProviderCoverage,
   type SearchHit,
   type SearchQuery,
@@ -446,9 +447,10 @@ export class CourtListenerAdapter implements LegalProviderAdapter {
 
 function publication(
   status: string | undefined,
-): "published" | "unpublished" | "unknown" {
+): Provenance["publicationStatus"] {
   if (!status) return "unknown";
   if (/^published$/i.test(status)) return "published";
+  if (/withdrawn|vacated/i.test(status)) return "withdrawn";
   if (/unpublished|non-precedential/i.test(status)) return "unpublished";
   return "unknown";
 }

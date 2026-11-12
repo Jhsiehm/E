@@ -57,6 +57,34 @@ describe("retrieve (fixture provider)", () => {
     ).toBe(true);
   });
 
+  it("never uses a withdrawn authority as evidence", async () => {
+    const reg = fixtureRegistry();
+    const t = await reg.enabled[0].fetchFullText("op-1");
+    await reg.store.put({
+      ...t,
+      authority: {
+        ...t.authority,
+        provenance: {
+          ...t.authority.provenance,
+          publicationStatus: "withdrawn",
+        },
+      },
+    });
+    const events: RetrievalEvent[] = [];
+    const r = await retrieve(reg, {
+      question: "consumer protection claim reliance injury",
+      onEvent: (e) => events.push(e),
+    });
+    expect(r.evidence.some((e) => e.authority.id === "fixture:op-1")).toBe(
+      false,
+    );
+    expect(events).toContainEqual({
+      type: "source.failed",
+      sourceId: "fixture:op-1",
+      reason: "withdrawn",
+    });
+  });
+
   it("filters by jurisdiction", async () => {
     const r = await retrieve(fixtureRegistry(), {
       question: "consumer-oriented private contract dispute",

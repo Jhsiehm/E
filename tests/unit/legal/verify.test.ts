@@ -38,6 +38,29 @@ describe("checkQuote", () => {
     expect(r.similarity).toBeGreaterThanOrEqual(0.9);
   });
 
+  it("rejects a near-match that flips negation", () => {
+    const text =
+      "The statute does not require reliance, but the plaintiff must show that the deceptive act caused actual injury.";
+    expect(
+      checkQuote(
+        "The statute does now require reliance, but the plaintiff must show that the deceptive act caused actual injury.",
+        text,
+      ).status,
+    ).toBe("mismatch");
+    expect(
+      checkQuote(
+        "The statute does require reliance, but the plaintiff must show that the deceptive act caused actual injury.",
+        text,
+      ).status,
+    ).toBe("mismatch");
+    expect(
+      checkQuote(
+        "The statute does not require reliance, but a plaintiff must show that the deceptive act caused actual injury.",
+        text,
+      ).status,
+    ).toBe("fuzzy");
+  });
+
   it("rejects fabricated quotes and trivially short ones", () => {
     expect(
       checkQuote(

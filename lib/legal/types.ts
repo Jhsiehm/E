@@ -34,7 +34,8 @@ export interface Provenance {
   checksum: string;
   /** Provider version marker when given, else the checksum. */
   versionId: string;
-  publicationStatus: "published" | "unpublished" | "unknown";
+  /** "withdrawn": the provider withdrew or vacated it; never usable as evidence. */
+  publicationStatus: "published" | "unpublished" | "withdrawn" | "unknown";
   licenseStatus: LicenseStatus;
   attribution: string;
 }

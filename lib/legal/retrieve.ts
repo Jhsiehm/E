@@ -215,6 +215,14 @@ export async function retrieve(
             t = await provider.fetchFullText(a.provenance.providerRecordId);
             await registry.store.put(t);
           }
+          if (t.authority.provenance.publicationStatus === "withdrawn") {
+            emit({
+              type: "source.failed",
+              sourceId: a.id,
+              reason: "withdrawn",
+            });
+            return null;
+          }
           emit({
             type: "source.progress",
             sourceId: a.id,
