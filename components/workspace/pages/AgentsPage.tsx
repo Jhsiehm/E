@@ -3,6 +3,7 @@ import Icon from "@/components/Icon";
 import { Card, Empty, Filter, Search } from "@/components/workspace/ui";
 import { Header } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
+import { STATUS_LABEL } from "@/lib/agents";
 
 /** Agent catalogue and assignment entry point. */
 export default function AgentsPage() {
@@ -30,10 +31,13 @@ export default function AgentsPage() {
         <Filter
           name="availability"
           title="Availability"
-          options={["available", "at_capacity"]}
+          options={["available", "beta", "coming_later"]}
         />
       </div>
-      <p className="eyebrow">{items.length} agents · Prototype capabilities</p>
+      <p className="eyebrow">
+        {items.length} agents · Every answer links to its sources and stays a
+        draft until you keep it
+      </p>
       <div className="page-body agent-grid">
         {items.map((a) => (
           <Card key={a.id} className="agent-card">
@@ -44,14 +48,25 @@ export default function AgentsPage() {
             <p className="muted">{a.description}</p>
             <div className="agent-stats">
               <span>{a.matterCount} matters</span>
-              <span className="verified">
+              <span
+                className={
+                  "agent-status " +
+                  (a.availability === "available" ? "verified" : "muted")
+                }
+              >
                 <i className="square" />
-                Available
+                {STATUS_LABEL[a.availability]}
               </span>
             </div>
-            <button onClick={() => open("agent", a.id)}>
-              Add agent <Icon name="plus" size={16} />
-            </button>
+            {a.availability === "coming_later" ? (
+              <button disabled aria-disabled="true">
+                Coming later
+              </button>
+            ) : (
+              <button onClick={() => open("agent", a.id)}>
+                Add agent <Icon name="plus" size={16} />
+              </button>
+            )}
           </Card>
         ))}
         {!items.length && <Empty onClear={clear} />}

@@ -233,6 +233,8 @@ export async function handleFixture(req: NextRequest, path: string[]) {
       if (method === "PATCH") {
         const a = s.agents.find((a) => a.id === path[1]);
         if (!a) return reply({ error: "Agent not found" }, 404);
+        if (a.availability === "coming_later")
+          return reply({ error: "This agent is not available yet" }, 409);
         for (const m of s.matters) {
           if (body.matterIds?.includes(m.id) && m.assignedAgentId !== a.id) {
             const old = s.agents.find((x) => x.id === m.assignedAgentId);

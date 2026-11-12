@@ -2,7 +2,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Icon from "./Icon";
-import { nav } from "./workspace/format";
+import { useAccount } from "./account/AccountProvider";
+import { NAV_HREF, NAV_LABELS } from "@/lib/account/layout";
+import { initials } from "@/lib/account/profile";
 import { Modal } from "./workspace/ui";
 import { WorkspaceContext } from "./workspace/context";
 import {
@@ -49,7 +51,8 @@ function routeContent(ws: LoadedWorkspace): ReactNode {
 
 /** App shell: loads workspace state, then renders sidebar, route and dialogs. */
 export default function Workspace() {
-  const ws = useWorkspaceController();
+  const account = useAccount();
+  const ws = useWorkspaceController(account.layout.defaultPractice);
   const { data, error, refresh } = ws;
   if (!data)
     return (
@@ -95,36 +98,29 @@ export default function Workspace() {
             Casevex
           </Link>
           <nav className="main-nav" aria-label="Primary">
-            {nav.map(([href, title, icon]) => (
-              <Link
-                key={title}
-                href={"/" + href}
-                className={
-                  (
-                    href === ""
-                      ? page === "dashboard"
-                      : page === href.split("/")[0]
-                  )
-                    ? "active"
-                    : ""
-                }
-                aria-current={
-                  (
-                    href === ""
-                      ? page === "dashboard"
-                      : page === href.split("/")[0]
-                  )
-                    ? "page"
-                    : undefined
-                }
-              >
-                <Icon name={icon} />
-                {title}
-                {title === "Notices" && unread > 0 && (
-                  <span className="nav-count">{unread}</span>
-                )}
-              </Link>
-            ))}
+            {account.layout.nav
+              .filter((key) => !account.layout.hiddenNav.includes(key))
+              .map((key) => {
+                const href = NAV_HREF[key];
+                const active =
+                  key === "dashboard"
+                    ? page === "dashboard"
+                    : page === href.split("/")[0];
+                return (
+                  <Link
+                    key={key}
+                    href={"/" + href}
+                    className={active ? "active" : ""}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <Icon name={key} />
+                    {NAV_LABELS[key]}
+                    {key === "notices" && unread > 0 && (
+                      <span className="nav-count">{unread}</span>
+                    )}
+                  </Link>
+                );
+              })}
           </nav>
           <div className="sidebar-matters">
             <p className="eyebrow">Active matters</p>
@@ -144,15 +140,15 @@ export default function Workspace() {
           </div>
           <Link className="user-block" href="/settings/profile">
             <span className="avatar">
-              {data.me.name
-                .split(" ")
-                .map((s) => s[0])
-                .join("")
-                .slice(0, 2)}
+              {initials(account.profile.fullName, account.profile.email)}
             </span>
             <span className="grow">
-              {data.me.name}
-              <small>{data.me.role}</small>
+              {account.profile.fullName || account.profile.email}
+              <small>
+                {account.profile.jobTitle ||
+                  account.profile.primaryArea ||
+                  "Your profile"}
+              </small>
             </span>
             <span>⌄</span>
           </Link>

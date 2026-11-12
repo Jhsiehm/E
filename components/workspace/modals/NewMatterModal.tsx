@@ -50,11 +50,14 @@ export default function NewMatterModal() {
       <label>
         Assigned agent
         <select name="assignedAgentId">
-          {data.agents.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
+          {data.agents
+            .filter((a) => a.availability !== "coming_later")
+            .map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+                {a.availability === "beta" ? " (beta)" : ""}
+              </option>
+            ))}
         </select>
       </label>
       <label>

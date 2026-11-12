@@ -20,9 +20,15 @@ export const ROUTES: [path: string, heading: string | RegExp][] = [
   ["/notices", "Notices"],
   ["/calendar", "Calendar"],
   ["/documents", "Documents"],
-  ...["profile", "workspace", "notifications", "integrations", "security"].map(
-    (s) => [`/settings/${s}`, "Settings"] as [string, string],
-  ),
+  ...[
+    "profile",
+    "practice",
+    "layout",
+    "workspace",
+    "notifications",
+    "integrations",
+    "security",
+  ].map((s) => [`/settings/${s}`, "Settings"] as [string, string]),
 ];
 
 export async function openApp(page: Page, path = "/") {
