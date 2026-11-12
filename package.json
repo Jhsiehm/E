@@ -6,8 +6,15 @@
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs"
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run",
+    "test:integration": "node --test tests/integration/*.test.mjs",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test:unit"
   },
   "dependencies": {
     "next": "16.4.6",
@@ -15,12 +22,17 @@
     "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.6",
     "postcss": "^8",
-    "autoprefixer": "^10"
+    "prettier": "^3.10.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5",
+    "vitest": "^5.1.0"
   }
 }

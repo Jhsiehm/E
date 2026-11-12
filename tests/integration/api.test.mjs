@@ -1,6 +1,16 @@
-import test from "node:test";
+import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
-const base = process.env.CASEVEX_TEST_URL || "http://localhost:3000";
+import { startServer } from "./server.mjs";
+// Fixture-mode prototype API. Uses CASEVEX_TEST_URL if given, else starts
+// `next start` with CASEVEX_DATA_MODE=fixture (production builds are live by default).
+let base = process.env.CASEVEX_TEST_URL;
+let server;
+before(async () => {
+  if (base) return;
+  server = await startServer({ CASEVEX_DATA_MODE: "fixture" });
+  base = server.url;
+});
+after(() => server?.stop());
 function client() {
   let cookie = "";
   return async (path, method = "GET", body) => {
