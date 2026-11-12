@@ -31,11 +31,12 @@ describe.skipIf(!routing)(
           variants(s).map(async (v) => ({
             id: v.persona.id,
             plan: await routing!.plan({
-              task: "research.answer",
+              task: "research.draft",
               prompt: v.prompt,
             }),
           })),
         );
+        expect(plans.length).toBe(personas.length);
         const control = JSON.stringify(plans[0].plan);
         const diverged = plans
           .filter((p) => JSON.stringify(p.plan) !== control)
@@ -74,7 +75,7 @@ describe.skipIf(!live)("counterfactual model-output audit (live)", () => {
     it(`no disparity across ${personas.length} personas: ${s.id}`, async () => {
       const { findings } = await auditScenario(s, async (prompt) => {
         const r = await routing!.run(
-          { task: "research.answer", prompt },
+          { task: "research.draft", prompt },
           { fetch, calls: [], callsTo: () => [], reset() {} },
         );
         return { text: r.text };

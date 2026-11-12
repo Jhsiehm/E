@@ -19,7 +19,12 @@ export type Step =
     }
   | { kind: "timeout" }
   | { kind: "network" }
-  | { kind: "malformed"; status?: number };
+  | { kind: "malformed"; status?: number }
+  /** Decide the step from the parsed request body (e.g. simulate OpenRouter). */
+  | {
+      kind: "dynamic";
+      respond: (body: unknown, url: URL) => Exclude<Step, { kind: "dynamic" }>;
+    };
 
 export interface Route {
   name: string;
@@ -34,7 +39,7 @@ export interface RecordedCall {
   method: string;
   headers: Record<string, string>;
   body: unknown;
-  step: Step["kind"] | "unmatched";
+  step: Exclude<Step["kind"], "dynamic"> | "unmatched";
   at: number;
 }
 
@@ -77,8 +82,9 @@ export function scriptedFetch(routes: Route[]) {
     if (!route) throw new TypeError(`scriptedFetch: no route for ${url.href}`);
 
     const i = cursors.get(route.name) ?? 0;
-    const step = route.steps[Math.min(i, route.steps.length - 1)];
+    let step = route.steps[Math.min(i, route.steps.length - 1)];
     cursors.set(route.name, i + 1);
+    if (step.kind === "dynamic") step = step.respond(body, url);
     record.step = step.kind;
 
     switch (step.kind) {
@@ -160,5 +166,59 @@ export function openRouterModel(model: string, steps: Step[]): Route {
       ((body as { model?: string }).model === model ||
         ((body as { models?: string[] }).models ?? [])[0] === model),
     steps,
+  };
+}
+
+export type ModelHealth =
+  "ok" | Exclude<Step, { kind: "json" } | { kind: "dynamic" }>;
+
+/**
+ * Simulates OpenRouter's server-side fallback: the request lists `models`
+ * (or one `model`); OpenRouter answers with the first healthy one and
+ * reports which model served it. If none is healthy, the primary's failure
+ * is returned. `servedAs` lets a test return a dated slug variant.
+ */
+export function fakeOpenRouter(opts: {
+  health: Record<string, ModelHealth>;
+  usage?: { prompt_tokens: number; completion_tokens: number; cost?: number };
+  content?: string | ((model: string) => string);
+  servedAs?: (model: string) => string;
+}): Route {
+  return {
+    name: "openrouter",
+    match: (url) => url.hostname.endsWith("openrouter.ai"),
+    steps: [
+      {
+        kind: "dynamic",
+        respond: (body) => {
+          const b = (body ?? {}) as { model?: string; models?: string[] };
+          const chain = b.models ?? (b.model ? [b.model] : []);
+          const healthy = chain.find((m) => (opts.health[m] ?? "ok") === "ok");
+          if (!healthy) {
+            const h = opts.health[chain[0]];
+            return h && h !== "ok" ? h : { kind: "http", status: 503 };
+          }
+          const usage = opts.usage ?? {
+            prompt_tokens: 100,
+            completion_tokens: 50,
+          };
+          const content =
+            typeof opts.content === "function"
+              ? opts.content(healthy)
+              : (opts.content ?? `answer from ${healthy}`);
+          const served = opts.servedAs ? opts.servedAs(healthy) : healthy;
+          return {
+            kind: "json",
+            body: {
+              ...openRouterCompletion(served, content, usage),
+              usage: {
+                ...usage,
+                total_tokens: usage.prompt_tokens + usage.completion_tokens,
+              },
+            },
+          };
+        },
+      },
+    ],
   };
 }

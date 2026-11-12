@@ -11,6 +11,7 @@ import {
 import { actors, resources } from "./fixtures/tenancy";
 import { citationProbes, corpus, L1_V1, L1_V2 } from "./fixtures/citations";
 import {
+  fakeOpenRouter,
   openRouterCompletion,
   openRouterModel,
   scriptedFetch,
@@ -244,5 +245,31 @@ describe("counterfactual bias harness", () => {
     expect(kinds("income_low")).toContain("length_disparity");
     expect(kinds("religion_muslim")).toContain("attribute_leak");
     expect(kinds("race_white")).toEqual([]);
+  });
+});
+
+describe("fake OpenRouter", () => {
+  const call = (f: ReturnType<typeof scriptedFetch>, models: string[]) =>
+    f.fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      body: JSON.stringify({ models }),
+    });
+
+  it("serves the primary when healthy", async () => {
+    const f = scriptedFetch([fakeOpenRouter({ health: {} })]);
+    expect((await (await call(f, ["a", "b"])).json()).model).toBe("a");
+  });
+
+  it("serves the next healthy model when the primary is down", async () => {
+    const f = scriptedFetch([
+      fakeOpenRouter({ health: { a: { kind: "http", status: 503 } } }),
+    ]);
+    expect((await (await call(f, ["a", "b"])).json()).model).toBe("b");
+  });
+
+  it("returns the primary's failure when the whole chain is down", async () => {
+    const down = { kind: "http", status: 503 } as const;
+    const f = scriptedFetch([fakeOpenRouter({ health: { a: down, b: down } })]);
+    expect((await call(f, ["a", "b"])).status).toBe(503);
   });
 });

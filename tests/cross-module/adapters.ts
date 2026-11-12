@@ -11,6 +11,7 @@ import type {
   CitationProbe,
 } from "../shared/fixtures/citations";
 import type { scriptedFetch } from "../shared/fakes/scripted-fetch";
+import { loadModule } from "../shared/pending";
 
 export interface AuthAdapter {
   owner: string;
@@ -30,37 +31,46 @@ export interface CitationAdapter {
 }
 
 export interface RoutingRequest {
-  /** AI function id from the routing table, e.g. "research.answer". */
+  /** AI function id from the routing table, e.g. "research.plan". */
   task: string;
   prompt: string;
-  /** Matter-confidential content must stay on approved/no-retention models. */
-  confidential?: boolean;
   /** Per-run budget in USD. */
   budgetUsd?: number;
-  /** User's AI experience level from onboarding. */
-  experience?: "new" | "some" | "regular";
+  env?: Record<string, string | undefined>;
+  signal?: AbortSignal;
 }
 
 export interface RoutingResult {
   ok: boolean;
   modelUsed?: string;
-  attempted: string[];
+  fellBack?: boolean;
   costUsd?: number;
-  error?: string;
   text?: string;
+  /** Typed error code from the module, or "untyped:<Name>" if a raw error escaped. */
+  error?: string;
+  errorMessage?: string;
 }
 
 export interface RoutingAdapter {
   owner: string;
-  /** Pure routing decision: which model (and fallbacks) a task would use. */
-  plan(req: RoutingRequest): Promise<{ primary: string; fallbacks: string[] }>;
+  tasks: string[];
+  dataClass(task: string): "public" | "confidential";
+  structured(task: string): boolean;
+  /** Pure routing decision. Throws when the configuration is refused. */
+  plan(req: RoutingRequest): { primary: string; fallbacks: string[] };
   /** Full call path with an injected fetch. */
   run(
     req: RoutingRequest,
     fake: ReturnType<typeof scriptedFetch>,
   ): Promise<RoutingResult>;
   /** Models that may receive confidential matter content. */
-  approvedForConfidential?: string[];
+  approvedForConfidential: string[];
+  /** Run two calls against one shared run budget. */
+  runShared?(
+    reqs: RoutingRequest[],
+    limitUsd: number,
+    fake: ReturnType<typeof scriptedFetch>,
+  ): Promise<RoutingResult[]>;
 }
 
 export interface ExperienceAdapter {
@@ -86,7 +96,96 @@ export async function citationAdapter(): Promise<CitationAdapter | null> {
 }
 
 export async function routingAdapter(): Promise<RoutingAdapter | null> {
-  return null; // waiting for the OpenRouter routing branch
+  // PR #3 "Add AI model routing by cost tier (OpenRouter)"
+  const ai = await loadModule<AiModule>("lib/ai/index");
+  if (!ai) return null;
+  const baseEnv = { OPENROUTER_API_KEY: "sk-or-test-key" };
+  const toResult = (e: unknown): RoutingResult =>
+    e instanceof ai.AiError
+      ? { ok: false, error: e.code, errorMessage: e.message }
+      : {
+          ok: false,
+          error: `untyped:${(e as Error)?.name ?? typeof e}`,
+          errorMessage: (e as Error)?.message,
+        };
+  const call = async (
+    req: RoutingRequest,
+    fake: ReturnType<typeof scriptedFetch>,
+    budget?: unknown,
+  ): Promise<RoutingResult> => {
+    try {
+      const r = await ai.runAiFunction(
+        req.task,
+        {
+          messages: [{ role: "user", content: req.prompt }],
+          budget:
+            budget ??
+            (req.budgetUsd !== undefined
+              ? new ai.RunBudget(req.budgetUsd)
+              : undefined),
+          signal: req.signal,
+        },
+        {
+          env: { ...baseEnv, ...req.env },
+          fetch: fake.fetch,
+          sleep: async () => {},
+          random: () => 0,
+        },
+      );
+      return {
+        ok: true,
+        modelUsed: r.usage.modelUsed,
+        fellBack: r.usage.fellBack,
+        costUsd: r.usage.costUsd,
+        text: r.text,
+      };
+    } catch (e) {
+      return toResult(e);
+    }
+  };
+  return {
+    owner: THREADS.routing,
+    tasks: Object.keys(ai.AI_FUNCTIONS),
+    dataClass: (t) => ai.AI_FUNCTIONS[t].dataClass,
+    structured: (t) => ai.AI_FUNCTIONS[t].structuredOutput,
+    plan(req) {
+      const r = ai.resolveRoute(req.task, { ...baseEnv, ...req.env });
+      return { primary: r.chain[0], fallbacks: r.chain.slice(1) };
+    },
+    run: (req, fake) => call(req, fake),
+    approvedForConfidential: Object.values(ai.MODELS)
+      .filter((m) => m.maxDataClass === "confidential")
+      .map((m) => m.id),
+    async runShared(reqs, limitUsd, fake) {
+      const budget = new ai.RunBudget(limitUsd);
+      const out = [];
+      for (const r of reqs) out.push(await call(r, fake, budget));
+      return out;
+    },
+  };
+}
+
+// Minimal structural view of lib/ai so this file typechecks before it lands.
+interface AiModule {
+  AiError: new (...a: never[]) => Error & { code: string };
+  RunBudget: new (limitUsd: number) => unknown;
+  AI_FUNCTIONS: Record<
+    string,
+    { dataClass: "public" | "confidential"; structuredOutput: boolean }
+  >;
+  MODELS: Record<string, { id: string; maxDataClass: string }>;
+  resolveRoute(
+    key: string,
+    env: Record<string, string | undefined>,
+  ): { chain: string[] };
+  runAiFunction(
+    key: string,
+    opts: Record<string, unknown>,
+    deps: Record<string, unknown>,
+  ): Promise<{
+    text: string;
+    usage: { modelUsed: string; fellBack: boolean; costUsd: number };
+  }>;
 }
 
 export async function experienceAdapter(): Promise<ExperienceAdapter | null> {
