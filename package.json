@@ -14,7 +14,9 @@
     "test:unit": "vitest run",
     "test:integration": "node --test tests/integration/*.test.mjs",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm run test:unit"
+    "check": "npm run lint && npm run typecheck && npm run test:unit",
+    "test:cross": "vitest run tests/shared tests/cross-module",
+    "test:bias": "CASEVEX_BIAS_EVAL=1 vitest run tests/cross-module/fairness.test.ts"
   },
   "dependencies": {
     "next": "16.4.6",
