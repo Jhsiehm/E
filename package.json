@@ -17,7 +17,9 @@
     "check": "npm run lint && npm run typecheck && npm run test:unit",
     "ai:report": "tsx scripts/ai-report.ts",
     "ai:check": "tsx scripts/ai-check.ts",
-    "ai:smoke": "tsx scripts/ai-smoke.ts"
+    "ai:smoke": "tsx scripts/ai-smoke.ts",
+    "test:cross": "vitest run tests/shared tests/cross-module",
+    "test:bias": "CASEVEX_BIAS_EVAL=1 node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run tests/cross-module/fairness.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
