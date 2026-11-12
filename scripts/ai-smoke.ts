@@ -64,6 +64,7 @@ async function main() {
       [
         `function  ${key} (${u.tier})`,
         `model     ${u.modelUsed}${u.fellBack ? `  (fell back from ${u.requestedModel})` : ""}`,
+        `host      ${u.provider ?? "?"} via ${u.gateway}`,
         `tokens    ${u.promptTokens} in / ${u.completionTokens} out`,
         `cost      $${u.costUsd.toFixed(6)} (${u.costSource})`,
         `latency   ${u.latencyMs} ms, ${u.attempts} attempt(s)`,

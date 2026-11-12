@@ -12,7 +12,7 @@
  * catalog before relying on the numbers.
  */
 
-export const PRICES_AS_OF = "2026-11-11";
+export const PRICES_AS_OF = "2026-11-12";
 
 /**
  * - `public`: public law and provider feeds only (opinions, statutes,
@@ -39,12 +39,16 @@ export interface ModelSpec {
   /**
    * OpenRouter upstream provider slugs this model may be served by. Calls
    * are pinned to these (provider.only); if none is up, the call fails
-   * rather than going to an unvetted host. Confirm each against the
-   * provider's no-training / retention terms before pilot.
+   * rather than going to an unvetted host. Verified live on 2026-11-12:
+   * with zdr on, OpenAI models run on Azure and Claude on Vertex/Bedrock,
+   * because the first-party endpoints are not zero-retention by default.
+   * Confirm each against the firm's data terms before pilot.
    */
   approvedProviders?: readonly string[];
   /** Model id on Anthropic's own API, for the direct ANTHROPIC_API_KEY gateway. */
   anthropicModelId?: string;
+  /** False when the model always reasons and rejects `reasoning.enabled: false`. */
+  canDisableReasoning?: boolean;
   notes?: string;
 }
 
@@ -57,7 +61,7 @@ export const MODELS = {
     outputUsdPerMTok: 20,
     contextTokens: 1_000_000,
     maxDataClass: "confidential",
-    approvedProviders: ["anthropic"],
+    approvedProviders: ["anthropic", "google-vertex", "amazon-bedrock"],
     anthropicModelId: "claude-opus-5-5",
   },
   "anthropic/claude-sonnet-5.5": {
@@ -68,7 +72,7 @@ export const MODELS = {
     outputUsdPerMTok: 10,
     contextTokens: 1_000_000,
     maxDataClass: "confidential",
-    approvedProviders: ["anthropic"],
+    approvedProviders: ["anthropic", "google-vertex", "amazon-bedrock"],
     anthropicModelId: "claude-sonnet-5-5",
   },
   "anthropic/claude-haiku-5.5": {
@@ -79,7 +83,7 @@ export const MODELS = {
     outputUsdPerMTok: 0.5,
     contextTokens: 1_000_000,
     maxDataClass: "confidential",
-    approvedProviders: ["anthropic"],
+    approvedProviders: ["anthropic", "google-vertex", "amazon-bedrock"],
     anthropicModelId: "claude-haiku-5-5",
   },
   "openai/gpt-6.1-sol": {
@@ -90,7 +94,7 @@ export const MODELS = {
     outputUsdPerMTok: 10,
     contextTokens: 1_050_000,
     maxDataClass: "confidential",
-    approvedProviders: ["openai"],
+    approvedProviders: ["openai", "azure"],
   },
   "openai/gpt-6.1-terra": {
     id: "openai/gpt-6.1-terra",
@@ -100,7 +104,7 @@ export const MODELS = {
     outputUsdPerMTok: 5,
     contextTokens: 1_050_000,
     maxDataClass: "confidential",
-    approvedProviders: ["openai"],
+    approvedProviders: ["openai", "azure"],
   },
   "openai/gpt-6-luna": {
     id: "openai/gpt-6-luna",
@@ -110,7 +114,7 @@ export const MODELS = {
     outputUsdPerMTok: 0.5,
     contextTokens: 1_050_000,
     maxDataClass: "confidential",
-    approvedProviders: ["openai"],
+    approvedProviders: ["openai", "azure"],
   },
   "google/gemini-3.1-pro-preview": {
     id: "google/gemini-3.1-pro-preview",
@@ -121,6 +125,7 @@ export const MODELS = {
     contextTokens: 1_050_000,
     maxDataClass: "confidential",
     approvedProviders: ["google-vertex"],
+    canDisableReasoning: false,
     notes:
       "Preview model: fine for fallback and testing, not as a pinned primary.",
   },
@@ -133,13 +138,14 @@ export const MODELS = {
     contextTokens: 1_050_000,
     maxDataClass: "confidential",
     approvedProviders: ["google-vertex"],
+    canDisableReasoning: false,
   },
   "deepseek/deepseek-v4.1-flash": {
     id: "deepseek/deepseek-v4.1-flash",
     vendor: "deepseek",
     label: "DeepSeek V4.1 Flash",
-    inputUsdPerMTok: 0.051,
-    outputUsdPerMTok: 0.5,
+    inputUsdPerMTok: 0.3,
+    outputUsdPerMTok: 1.2,
     contextTokens: 1_050_000,
     maxDataClass: "public",
     notes:

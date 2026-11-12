@@ -23,7 +23,7 @@ Agent profiles and other config refer to tiers by these names
 
 A research run is about 12 model calls, but one of them (`research.draft`)
 is most of the cost. Keeping plan, rerank and the eight claim checks off the
-frontier tier makes a run cost about $0.15 instead of about $0.31 if every
+frontier tier makes a run cost about $0.18 instead of about $0.31 if every
 step used Opus. The biggest lever is `research.route`: it costs a hundredth
 of a cent and keeps "thanks" and "what's the docket number?" from starting a
 full research run.
@@ -43,12 +43,25 @@ retrieval stay in code, per handoff 04.
   `provider.only` from each model's `approvedProviders`. If no compliant host
   is up, the call fails instead of going to another host. In
   `CASEVEX_DEPLOYMENT=pilot`, a confidential function whose chain has an
-  unpinned model is refused.
+  unpinned model is refused. In the live test on 2026-11-12, zero-retention
+  calls landed on Azure (OpenAI models), Amazon Bedrock or Vertex (Claude)
+  and Vertex (Gemini): the first-party OpenAI and Anthropic endpoints are not
+  zero-retention by default, so those clouds are in `approvedProviders`.
 - **Fallbacks stay in the approved chain.** OpenRouter tries the chain in
   order. The result reports `fellBack: true` and the model actually used, so
   a fallback is never silent.
-- **Independent verification.** `research.verify_support` must use a
-  different vendor than `research.draft` (a unit test checks this).
+- **Independent verification.** No model in `research.verify_support`'s
+  chain may share a vendor with any model in `research.draft`'s chain,
+  fallbacks included. `resolveRoute` throws if an override breaks this. The
+  checker therefore runs on Gemini while drafting runs on Claude or GPT.
+- **Reasoning tokens.** Hidden reasoning is billed as output and counts
+  against `max_tokens`. The `fast` and `bulk` tiers turn it off; `reasoning`
+  and `frontier` get extra headroom (2,000 and 4,000 tokens). Models that
+  cannot turn it off (Gemini) get at least 1,000 tokens of headroom.
+- **JSON mode is best-effort.** Calls do not send `require_parameters`:
+  live tests showed it rules out every zero-retention host once
+  `temperature` is set. Replies are fence-stripped, parsed and validated, and
+  a non-JSON reply is an `invalid_output` error that names the stop reason.
 - **Budgets.** Each tier has a per-call ceiling, and callers pass a
   `RunBudget` (from the agent profile's `budgets.maxUSDPerRun`). The client
   estimates the worst-case cost before sending and refuses a call that could
@@ -98,6 +111,16 @@ chain (the `fast` tier, for example, uses its Haiku fallback and reports
 `fellBack: true`). Functions with no Claude model in their chain fail with a
 "set OPENROUTER_API_KEY" error: `research.verify_support` (it must not be
 the same vendor as the drafter) and the `bulk` tier.
+
+## Live test, 2026-11-12
+
+`npm run ai:check`: all 10 catalog models exist with matching prices (the
+DeepSeek price was corrected to $0.30 / $1.20). `npm run ai:smoke` ran all
+19 functions with a synthetic prompt; every one answered on its intended
+primary model, for about $0.11 in total.
+
+In the cloud sandbox, Node's `fetch` needs `NODE_USE_ENV_PROXY=1` to use the
+proxy. A normal laptop does not need it.
 
 ## Testing models with OpenRouter
 

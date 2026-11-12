@@ -74,10 +74,12 @@ describe("runAiFunction", () => {
     expect(body.provider).toMatchObject({
       data_collection: "deny",
       zdr: true,
-      only: ["openai", "anthropic"],
+      only: ["openai", "azure", "anthropic", "google-vertex", "amazon-bedrock"],
     });
     expect(body.response_format).toEqual({ type: "json_object" });
     expect(body.usage).toEqual({ include: true });
+    expect(body.reasoning).toEqual({ enabled: false });
+    expect(body.max_tokens).toBe(150);
     expect(usages[0]).toMatchObject({
       functionKey: "research.route",
       tier: "fast",
@@ -232,7 +234,7 @@ describe("runAiFunction", () => {
     expect(() => resolveRoute("research.plan", env)).toThrow();
     expect(
       resolveRoute("research.plan", { CASEVEX_DEPLOYMENT: "pilot" }).providers,
-    ).toEqual(["anthropic", "google-vertex"]);
+    ).toEqual(["anthropic", "google-vertex", "amazon-bedrock"]);
   });
 });
 

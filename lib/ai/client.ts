@@ -1,6 +1,7 @@
 import { AI_FUNCTIONS, type AiFunctionKey } from "./functions";
 import { MODELS, getModel, isModelId, priceCall, type ModelId } from "./models";
 import { resolveRoute, type ResolvedRoute } from "./routing";
+import { REASONING_FLOOR_TOKENS, TIERS } from "./tiers";
 
 /**
  * Server-side OpenRouter client. The single entry point for every model call
@@ -55,6 +56,8 @@ export interface AiUsage {
   costSource: "openrouter" | "estimate";
   latencyMs: number;
   attempts: number;
+  /** Why generation stopped, e.g. "stop", "length", "content_filter". */
+  finishReason?: string;
   promptVersion?: string;
   generationId?: string;
 }
@@ -178,7 +181,21 @@ export async function runAiFunction<T = string>(
     fn.maxOutputTokens,
   );
 
-  const worst = estimateWorstCaseUsd(route, opts.messages, maxOutputTokens);
+  // Reasoning tokens are billed as output and count against max_tokens.
+  const tierSpec = TIERS[fn.tier];
+  const mustReason = gw.chain.some(
+    (id) => isModelId(id) && getModel(id).canDisableReasoning === false,
+  );
+  const reasoningOff = tierSpec.reasoning.mode === "off" && !mustReason;
+  const headroom = reasoningOff
+    ? 0
+    : Math.max(
+        tierSpec.reasoning.headroomTokens,
+        mustReason ? REASONING_FLOOR_TOKENS : 0,
+      );
+  const maxTokens = maxOutputTokens + headroom;
+
+  const worst = estimateWorstCaseUsd(route, opts.messages, maxTokens);
   if (worst > route.maxUsdPerCall)
     throw new AiError(
       "budget_exceeded",
@@ -259,14 +276,17 @@ export async function runAiFunction<T = string>(
   if (gw.gateway === "openrouter") {
     const body: Record<string, unknown> = {
       messages: opts.messages,
-      max_tokens: maxOutputTokens,
+      max_tokens: maxTokens,
       temperature: fn.temperature,
       usage: { include: true },
+      ...(reasoningOff ? { reasoning: { enabled: false } } : {}),
+      // No require_parameters: live tests showed it excludes every
+      // zero-retention host once temperature is set. JSON mode is
+      // best-effort; replies are parsed and validated below either way.
       provider: {
         data_collection: "deny",
         ...(route.providers ? { only: route.providers } : {}),
         ...(fn.dataClass === "confidential" ? { zdr: true } : {}),
-        ...(fn.structuredOutput ? { require_parameters: true } : {}),
       },
       ...(fn.structuredOutput
         ? { response_format: { type: "json_object" } }
@@ -291,6 +311,7 @@ export async function runAiFunction<T = string>(
       );
     reply = {
       text: json.choices?.[0]?.message?.content ?? "",
+      finishReason: json.choices?.[0]?.finish_reason,
       modelUsed: json.model ?? gw.chain[0],
       provider: json.provider,
       promptTokens: json.usage?.prompt_tokens ?? 0,
@@ -316,7 +337,7 @@ export async function runAiFunction<T = string>(
           { "x-api-key": gw.apiKey, "anthropic-version": ANTHROPIC_VERSION },
           {
             model: spec.anthropicModelId,
-            max_tokens: maxOutputTokens,
+            max_tokens: maxTokens,
             temperature: fn.temperature,
             ...(system ? { system } : {}),
             messages: turns,
@@ -329,6 +350,7 @@ export async function runAiFunction<T = string>(
             .join(""),
           modelUsed: slug,
           provider: "Anthropic",
+          finishReason: json.stop_reason,
           promptTokens: json.usage?.input_tokens ?? 0,
           completionTokens: json.usage?.output_tokens ?? 0,
           id: json.id,
@@ -374,6 +396,7 @@ export async function runAiFunction<T = string>(
       costSource: typeof reportedCost === "number" ? "openrouter" : "estimate",
       latencyMs: now() - started,
       attempts,
+      finishReason: reply.finishReason,
       promptVersion: opts.promptVersion,
       generationId: reply.id,
     };
@@ -385,9 +408,14 @@ export async function runAiFunction<T = string>(
       try {
         data = JSON.parse(stripFences(text));
       } catch {
+        const why =
+          reply.finishReason &&
+          !["stop", "end_turn"].includes(reply.finishReason)
+            ? ` (generation stopped: ${reply.finishReason})`
+            : "";
         throw new AiError(
           "invalid_output",
-          `${key} returned text that is not JSON.`,
+          `${key} returned text that is not JSON${why}.`,
         );
       }
     }
@@ -473,6 +501,7 @@ export function resolveGateway(
 
 interface NormalizedReply {
   text: string;
+  finishReason?: string;
   modelUsed: string;
   provider?: string;
   promptTokens: number;
@@ -485,6 +514,7 @@ interface AnthropicResponse {
   id?: string;
   model?: string;
   content?: { type: string; text?: string }[];
+  stop_reason?: string;
   usage?: { input_tokens?: number; output_tokens?: number };
 }
 
@@ -494,7 +524,7 @@ interface OpenRouterResponse {
   id?: string;
   model?: string;
   provider?: string;
-  choices?: { message?: { content?: string } }[];
+  choices?: { message?: { content?: string }; finish_reason?: string }[];
   usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number };
   error?: { message?: string; code?: number };
 }

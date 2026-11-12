@@ -102,6 +102,20 @@ export function resolveRoute(
     return undefined;
   });
 
+  if (fn.independentOf) {
+    const other = resolveRoute(fn.independentOf as AiFunctionKey, env);
+    const theirs = new Set(other.specs.map((x) => x?.vendor));
+    const clash = specs.find((x) => !x || theirs.has(x.vendor));
+    if (clash !== undefined || specs.some((x) => !x))
+      throw new AiRoutingError(
+        `${key} must be independent of ${fn.independentOf}, but ${
+          clash
+            ? `${clash.id} shares its vendor (${clash.vendor})`
+            : "an unlisted model's vendor cannot be checked"
+        }. ${fn.independentOf} may run on ${other.chain.join(", ")}.`,
+      );
+  }
+
   const pinned = specs.every((s) => s?.approvedProviders?.length);
   const providers = pinned
     ? [...new Set(specs.flatMap((s) => s!.approvedProviders!))]

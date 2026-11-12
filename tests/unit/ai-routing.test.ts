@@ -10,6 +10,7 @@ import {
   isModelId,
   pipelineCost,
   resolveRoute,
+  runAiFunction,
   scenarioCost,
   type AiFunctionKey,
 } from "@/lib/ai";
@@ -38,15 +39,87 @@ describe("AI function registry", () => {
         expect(AI_FUNCTIONS[key].dataClass, key).toBe("public");
   });
 
-  it("uses a different vendor for independent checks", () => {
+  it("shares no vendor between a check and any model of the function it checks", () => {
     for (const key of keys) {
       const other = AI_FUNCTIONS[key].independentOf as
         AiFunctionKey | undefined;
       if (!other) continue;
-      const drafter = resolveRoute(other, {}).specs[0]!.vendor;
+      const theirs = new Set(
+        resolveRoute(other, {}).specs.map((s) => s!.vendor),
+      );
       for (const spec of resolveRoute(key, {}).specs)
-        expect(spec!.vendor, `${key} vs ${other}`).not.toBe(drafter);
+        expect(theirs.has(spec!.vendor), `${key} ${spec!.id} vs ${other}`).toBe(
+          false,
+        );
     }
+  });
+
+  it("refuses overrides that break checker independence", () => {
+    const env = (o: unknown) => ({ CASEVEX_AI_OVERRIDES: JSON.stringify(o) });
+    expect(() =>
+      resolveRoute(
+        "research.verify_support",
+        env({ "research.verify_support": "anthropic/claude-opus-5.5" }),
+      ),
+    ).toThrow(/independent of research.draft/);
+    // the drafter moving onto the checker's vendor is caught too
+    expect(() =>
+      resolveRoute(
+        "research.verify_support",
+        env({ "tier:frontier": ["google/gemini-3.1-pro-preview"] }),
+      ),
+    ).toThrow(/shares its vendor/);
+    expect(
+      resolveRoute(
+        "research.verify_support",
+        env({
+          "research.verify_support": "openai/gpt-6.1-terra",
+          "research.draft": "anthropic/claude-opus-5.5",
+        }),
+      ).chain,
+    ).toEqual(["openai/gpt-6.1-terra"]);
+  });
+
+  it("adds reasoning headroom and keeps reasoning on for models that require it", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const fetchImpl = (async (_u: string, init: RequestInit) => {
+      bodies.push(JSON.parse(init.body as string));
+      return new Response(
+        JSON.stringify({
+          model: "x",
+          choices: [{ message: { content: "{}" } }],
+          usage: { cost: 0 },
+        }),
+        { status: 200 },
+      );
+    }) as unknown as typeof fetch;
+    const deps = {
+      env: { OPENROUTER_API_KEY: "k" },
+      fetch: fetchImpl,
+      sleep: async () => {},
+    };
+    const m = [{ role: "user" as const, content: "q" }];
+    await runAiFunction("research.verify_support", { messages: m }, deps);
+    expect(bodies[0].reasoning).toBeUndefined();
+    expect(bodies[0].max_tokens).toBe(400 + 2000);
+    await runAiFunction("research.route", { messages: m }, deps);
+    expect(bodies[1].reasoning).toEqual({ enabled: false });
+    expect(bodies[1].max_tokens).toBe(150);
+    await runAiFunction(
+      "research.route",
+      { messages: m },
+      {
+        ...deps,
+        env: {
+          ...deps.env,
+          CASEVEX_AI_OVERRIDES: JSON.stringify({
+            "research.route": "google/gemini-3.5-flash-lite",
+          }),
+        },
+      },
+    );
+    expect(bodies[2].reasoning).toBeUndefined();
+    expect(bodies[2].max_tokens).toBe(150 + 1000);
   });
 
   it("stays within each tier's per-call ceiling at typical sizes", () => {

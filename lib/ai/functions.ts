@@ -29,7 +29,7 @@ export interface AiFunctionSpec {
   dataClass: DataClass;
   /** Replaces the tier chain when set. */
   chain?: readonly ModelId[];
-  /** This function's models must come from a different vendor than that function's primary. */
+  /** No model in this function's chain may share a vendor with any model in that function's chain (fallbacks included). Enforced by resolveRoute. */
   independentOf?: string;
   structuredOutput: boolean;
   temperature: number;
@@ -107,7 +107,7 @@ const fns = [
     phase: "P3",
     tier: "reasoning",
     dataClass: "confidential",
-    chain: ["openai/gpt-6.1-terra", "google/gemini-3.1-pro-preview"],
+    chain: ["google/gemini-3.1-pro-preview", "google/gemini-3.5-flash-lite"],
     independentOf: "research.draft",
     structuredOutput: true,
     temperature: 0,
@@ -115,7 +115,7 @@ const fns = [
     typicalOutputTokens: 200,
     maxOutputTokens: 400,
     maxUsdPerCall: 0.05,
-    why: "supports_claim check, run once per claim (~8 per answer). Spec requires an independent model, so it uses a different vendor than the drafter.",
+    why: "supports_claim check, run once per claim (~8 per answer). Spec requires an independent model, so its chain shares no vendor with any model that may draft (Anthropic or OpenAI), including fallbacks.",
   },
   {
     key: "research.thread_title",

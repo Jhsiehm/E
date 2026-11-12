@@ -28,6 +28,13 @@ export interface TierSpec {
   /** Default per-call ceiling in USD; functions may lower it. */
   maxUsdPerCall: number;
   timeoutMs: number;
+  /**
+   * Hidden reasoning. "off" asks models to skip it (cheap, short jobs);
+   * otherwise `headroomTokens` is added to max_tokens because reasoning
+   * tokens are billed as output and count against the limit. Models that
+   * cannot turn reasoning off get REASONING_FLOOR_TOKENS of headroom.
+   */
+  reasoning: { mode: "off" | "default"; headroomTokens: number };
 }
 
 export const TIERS: Record<Tier, TierSpec> = {
@@ -37,6 +44,7 @@ export const TIERS: Record<Tier, TierSpec> = {
     chain: ["anthropic/claude-opus-5.5", "openai/gpt-6.1-sol"],
     maxUsdPerCall: 1.0,
     timeoutMs: 120_000,
+    reasoning: { mode: "default", headroomTokens: 4000 },
   },
   reasoning: {
     tier: "reasoning",
@@ -44,6 +52,7 @@ export const TIERS: Record<Tier, TierSpec> = {
     chain: ["anthropic/claude-sonnet-5.5", "google/gemini-3.1-pro-preview"],
     maxUsdPerCall: 0.3,
     timeoutMs: 60_000,
+    reasoning: { mode: "default", headroomTokens: 2000 },
   },
   fast: {
     tier: "fast",
@@ -51,6 +60,7 @@ export const TIERS: Record<Tier, TierSpec> = {
     chain: ["openai/gpt-6-luna", "anthropic/claude-haiku-5.5"],
     maxUsdPerCall: 0.03,
     timeoutMs: 20_000,
+    reasoning: { mode: "off", headroomTokens: 0 },
   },
   bulk: {
     tier: "bulk",
@@ -58,5 +68,9 @@ export const TIERS: Record<Tier, TierSpec> = {
     chain: ["deepseek/deepseek-v4.1-flash", "qwen/qwen3.8-flash"],
     maxUsdPerCall: 0.01,
     timeoutMs: 30_000,
+    reasoning: { mode: "off", headroomTokens: 0 },
   },
 };
+
+/** Headroom for a model that must reason even when its tier asks for "off". */
+export const REASONING_FLOOR_TOKENS = 1_000;
