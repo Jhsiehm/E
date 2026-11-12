@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import Icon from "@/components/Icon";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { demoSignIn } from "@/lib/account/actions";
+import { safeNext } from "@/lib/account/safe-next";
 import type { AuthMode } from "@/lib/account/auth-mode";
 
 type Kind = "sign-in" | "sign-up";
@@ -24,7 +25,11 @@ export default function AuthForm({
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || (kind === "sign-up" ? "/onboarding" : "/");
+  const fallback = kind === "sign-up" ? "/onboarding" : "/";
+  const next =
+    typeof window === "undefined"
+      ? fallback
+      : safeNext(params.get("next"), window.location.origin, fallback);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");

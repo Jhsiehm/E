@@ -143,3 +143,25 @@ describe("resolveAuthMode", () => {
     expect(allowOpenSignup({})).toBe(true);
   });
 });
+
+import { safeNext } from "@/lib/account/safe-next";
+describe("safeNext", () => {
+  const o = "https://casevex.vercel.app";
+  it("keeps same-site paths", () => {
+    expect(safeNext("/matters?tab=open#x", o)).toBe("/matters?tab=open#x");
+    expect(safeNext(null, o, "/onboarding")).toBe("/onboarding");
+  });
+  it("rejects every way of pointing off-site", () => {
+    for (const v of [
+      "https://evil.com",
+      "//evil.com",
+      "/\\evil.com",
+      "/\t/evil.com",
+      "/\n/evil.com",
+      "/\r\\evil.com",
+      "javascript:alert(1)",
+      "http://casevex.vercel.app.evil.com/",
+    ])
+      expect(safeNext(v, o)).toBe("/");
+  });
+});
