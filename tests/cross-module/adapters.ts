@@ -80,14 +80,31 @@ export interface RoutingAdapter {
 
 export interface ExperienceAdapter {
   owner: string;
-  /** Feature flags the UI/agents enable for a given AI experience level. */
-  featuresFor(level: "new" | "some" | "advanced"): Promise<string[]> | string[];
+  levels: string[];
+  roles: string[];
+  allFeatures: string[];
+  levelFor(ai: string | null | undefined): string;
+  features(ctx: { level: string; role: string; isAdmin?: boolean }): string[];
+}
+
+export interface AgentConfigLite {
+  key: string;
+  verification: Record<string, unknown>;
+  tiers: Record<"plan" | "rerank" | "draft" | "verify", string>;
+  budgets: { maxUSDPerRun: number };
+}
+
+export interface AgentsAdapter {
+  owner: string;
+  catalog: AgentConfigLite[];
+  validate(cfg: AgentConfigLite): { path: string; message: string }[];
 }
 
 export const THREADS = {
   auth: "Supabase sign-in and onboarding",
   sources: "Legal data retrieval",
   routing: "AI model routing",
+  agents: "Specialized legal agents",
 } as const;
 
 // ---- Wiring (update as branches land) -------------------------------------
@@ -451,5 +468,39 @@ interface AiModule {
 }
 
 export async function experienceAdapter(): Promise<ExperienceAdapter | null> {
-  return null; // waiting for onboarding experience levels
+  // PR #7 "Agent catalog ... and AI experience levels" (lib/agents)
+  const m = await loadModule<{
+    levelFor(ai: string | null | undefined): string;
+    featuresFor(ctx: {
+      level: string;
+      role: string;
+      isAdmin?: boolean;
+    }): string[];
+    FEATURE_LEVEL: Record<string, string>;
+    LEVEL_FOR: Record<string, string>;
+  }>("lib/agents/experience");
+  if (!m) return null;
+  return {
+    owner: THREADS.agents,
+    levels: [...new Set(Object.values(m.LEVEL_FOR))],
+    roles: ["attorney", "paralegal", "student", "other"],
+    allFeatures: Object.keys(m.FEATURE_LEVEL),
+    levelFor: m.levelFor,
+    features: m.featuresFor,
+  };
+}
+
+export async function agentsAdapter(): Promise<AgentsAdapter | null> {
+  const m = await loadModule<{
+    AGENT_CATALOG: AgentConfigLite[];
+    validateAgentConfig(
+      a: AgentConfigLite,
+    ): { path: string; message: string }[];
+  }>("lib/agents/index");
+  if (!m) return null;
+  return {
+    owner: THREADS.agents,
+    catalog: [...m.AGENT_CATALOG],
+    validate: m.validateAgentConfig,
+  };
 }
