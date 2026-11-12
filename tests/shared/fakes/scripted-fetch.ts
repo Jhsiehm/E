@@ -222,3 +222,38 @@ export function fakeOpenRouter(opts: {
     ],
   };
 }
+
+/**
+ * Simulates the Anthropic Messages API: one model per request, health keyed
+ * by the Anthropic model id in the body.
+ */
+export function fakeAnthropic(opts: {
+  health?: Record<string, ModelHealth>;
+  content?: string;
+  usage?: { input_tokens: number; output_tokens: number };
+}): Route {
+  return {
+    name: "anthropic",
+    match: (url) => url.hostname === "api.anthropic.com",
+    steps: [
+      {
+        kind: "dynamic",
+        respond: (body) => {
+          const model = (body as { model?: string })?.model ?? "";
+          const h = opts.health?.[model] ?? "ok";
+          if (h !== "ok") return h;
+          return {
+            kind: "json",
+            body: {
+              id: `msg_${model}`,
+              type: "message",
+              model,
+              content: [{ type: "text", text: opts.content ?? "answer" }],
+              usage: opts.usage ?? { input_tokens: 100, output_tokens: 50 },
+            },
+          };
+        },
+      },
+    ],
+  };
+}

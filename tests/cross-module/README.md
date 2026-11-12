@@ -6,8 +6,8 @@ when they should and fail or are denied when they should.
 | Suite | Checks | Waits on |
 | --- | --- | --- |
 | `access.test.ts` | Full role × resource × action matrix: cross-firm, ethical wall (paralegal off restricted matter), owner not bypassing matter ACL, revoked and signed-out users, forged sessions, self-declared role escalation | Supabase sign-in (P1) |
-| `citations.test.ts` | Real (synthetic) citations verify; fabricated, malformed, wrong-volume, misquoted, stale-version, withdrawn and prompt-injection citations are rejected. Zero invented-citation acceptance. | Legal data retrieval (P3) |
-| `routing.test.ts` | Per AI function: healthy primary used, OpenRouter-side fallback on 429/503 reported, confidential functions pinned to zero-retention approved providers. Plus: typed errors for outage, network, malformed and non-JSON replies; bounded retries; budget refused before sending, cost always counted, shared run budget; override and pilot guards; no key leaks | AI model routing (wired, PR #3) |
+| `citations.test.ts` | Real (synthetic) citations verify; fabricated, malformed, wrong-volume, misquoted, stale-version, withdrawn and prompt-injection citations are rejected. Zero invented-citation acceptance. | Legal data retrieval (wired, PR #5) |
+| `routing.test.ts` | Per AI function: healthy primary used, OpenRouter-side fallback on 429/503 reported, confidential functions pinned to zero-retention approved providers. Plus: typed errors for outage, network, malformed and non-JSON replies; bounded retries; budget refused before sending, cost always counted, shared run budget; override and pilot guards; no key leaks | AI model routing (wired, PR #3); also verifier independence and Anthropic-direct gateway |
 | `fairness.test.ts` | Routing is blind to client identity; safety features equal across AI experience levels; live counterfactual persona audit (weekly, opt-in) | Routing, onboarding |
 
 Shared pieces live in `tests/shared/` (tenancy fixtures, access oracle,

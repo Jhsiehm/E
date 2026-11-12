@@ -57,7 +57,7 @@ const SAFETY_FEATURES = [
 describe.skipIf(!experience)(
   `safety is equal across AI experience levels [${THREADS.auth}]`,
   () => {
-    for (const level of ["new", "some", "regular"] as const)
+    for (const level of ["new", "some", "advanced"] as const)
       it(`${level}: all safety features on`, async () => {
         const f = await experience!.featuresFor(level);
         expect(SAFETY_FEATURES.filter((x) => !f.includes(x))).toEqual([]);

@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  fakeAnthropic,
   fakeOpenRouter,
   scriptedFetch,
   type ModelHealth,
@@ -263,6 +264,132 @@ describe.skipIf(!routing)(`model routing [${THREADS.routing}]`, () => {
       expect(new URL(c.url).hostname).toMatch(/(^|\.)openrouter\.ai$/);
     expect(r).toMatchObject({ ok: false, error: "unauthorized" });
     expect(r.errorMessage ?? "").not.toContain("sk-or-test-key");
+  });
+});
+
+describe.skipIf(!routing)(`verifier independence [${THREADS.routing}]`, () => {
+  const pairs = (routing?.tasks ?? [])
+    .map((t) => [t, routing!.independentOf(t)] as const)
+    .filter((p): p is readonly [string, string] => !!p[1]);
+
+  it("at least one function declares an independent verifier", () => {
+    expect(pairs.length).toBeGreaterThan(0);
+  });
+
+  for (const [checker, drafter] of pairs) {
+    it(`${checker} never shares a vendor with any model ${drafter} may run on (fallbacks included)`, () => {
+      const vendors = (t: string) => {
+        const p = routing!.plan(req(t));
+        return new Set(
+          [p.primary, ...p.fallbacks].map((m) => routing!.vendorOf(m)),
+        );
+      };
+      const d = vendors(drafter);
+      expect([...vendors(checker)].filter((v) => d.has(v))).toEqual([]);
+    });
+
+    it(`an override cannot make ${checker} use the drafter's vendor`, () => {
+      const drafterPrimary = routing!.plan(req(drafter)).primary;
+      expect(() =>
+        routing!.plan(
+          req(checker, {
+            env: {
+              CASEVEX_AI_OVERRIDES: JSON.stringify({
+                [checker]: drafterPrimary,
+              }),
+            },
+          }),
+        ),
+      ).toThrow();
+    });
+  }
+});
+
+describe.skipIf(!routing)(`gateway selection [${THREADS.routing}]`, () => {
+  const anthropicOnly = {
+    OPENROUTER_API_KEY: "",
+    ANTHROPIC_API_KEY: "sk-ant-test-key",
+  };
+  const claudeTask = (routing?.tasks ?? []).find((t) =>
+    [routing!.plan(req(t)).primary, ...routing!.plan(req(t)).fallbacks].some(
+      (m) => routing!.vendorOf(m) === "anthropic",
+    ),
+  );
+  const nonClaudeTask = (routing?.tasks ?? []).find((t) =>
+    [routing!.plan(req(t)).primary, ...routing!.plan(req(t)).fallbacks].every(
+      (m) => routing!.vendorOf(m) !== "anthropic",
+    ),
+  );
+
+  it.skipIf(!claudeTask)(
+    "with only an Anthropic key, Claude functions call Anthropic directly",
+    async () => {
+      const fake = scriptedFetch([
+        fakeAnthropic({ content: contentFor(claudeTask!) }),
+        fakeOpenRouter({ health: {} }),
+      ]);
+      const r = await routing!.run(
+        req(claudeTask!, { env: anthropicOnly }),
+        fake,
+      );
+      expect(r, r.errorMessage).toMatchObject({
+        ok: true,
+        gateway: "anthropic",
+      });
+      expect(r.costUsd ?? 0).toBeGreaterThan(0);
+      for (const c of fake.calls) {
+        expect(new URL(c.url).hostname).toBe("api.anthropic.com");
+        expect(c.headers["x-api-key"]).toBe("sk-ant-test-key");
+        expect(c.headers.authorization).toBeUndefined();
+      }
+    },
+  );
+
+  it.skipIf(!nonClaudeTask)(
+    "with only an Anthropic key, non-Claude functions refuse instead of calling elsewhere",
+    async () => {
+      const fake = scriptedFetch([
+        fakeAnthropic({}),
+        fakeOpenRouter({ health: {} }),
+      ]);
+      const r = await routing!.run(
+        req(nonClaudeTask!, { env: anthropicOnly }),
+        fake,
+      );
+      expect(r).toMatchObject({ ok: false, error: "not_configured" });
+      expect(fake.calls).toHaveLength(0);
+    },
+  );
+
+  it("with both keys, each key only goes to its own host", async () => {
+    const fake = scriptedFetch([
+      fakeAnthropic({ content: contentFor("research.plan") }),
+      fakeOpenRouter({ health: {}, content: contentFor("research.plan") }),
+    ]);
+    for (const gw of ["openrouter", "anthropic"])
+      await routing!.run(
+        req("research.plan", {
+          env: { ANTHROPIC_API_KEY: "sk-ant-test-key", CASEVEX_AI_GATEWAY: gw },
+        }),
+        fake,
+      );
+    expect(fake.calls.length).toBeGreaterThanOrEqual(2);
+    for (const c of fake.calls) {
+      const h = new URL(c.url).hostname;
+      const all = JSON.stringify(c.headers);
+      if (h === "api.anthropic.com")
+        expect(all).not.toContain("sk-or-test-key");
+      else expect(all).not.toContain("sk-ant-test-key");
+    }
+  });
+
+  it("rejects an unknown gateway setting", async () => {
+    const r = await routing!.run(
+      req("research.plan", { env: { CASEVEX_AI_GATEWAY: "bedrock" } }),
+      setup("research.plan"),
+    );
+    expect(r.ok).toBe(false);
+    expect(r.error).not.toMatch(/^untyped:/);
   });
 });
 
