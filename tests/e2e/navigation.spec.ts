@@ -58,3 +58,53 @@ test("sidebar matter shortcuts open the matter", async ({ page }, info) => {
   await expect(page).toHaveURL(/\/matters\/ridgeway$/);
   await expect(page.locator("main h1")).toHaveText("Ridgeway Holdings LLC");
 });
+
+test("switching screens keeps the workspace mounted (no boot screen, no refetch)", async ({
+  page,
+}) => {
+  await openApp(page, "/");
+  let bootstraps = 0;
+  page.on("request", (r) => {
+    if (r.url().includes("/api/bootstrap")) bootstraps++;
+  });
+  await page.evaluate(() => {
+    (window as unknown as { __boots: number }).__boots = 0;
+    new MutationObserver(() => {
+      if (document.querySelector(".boot"))
+        (window as unknown as { __boots: number }).__boots++;
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  const nav = page.getByRole("navigation", { name: "Primary" });
+  for (const name of [
+    "Matters",
+    "Agents",
+    "Notices",
+    "Calendar",
+    "Dashboard",
+  ]) {
+    await nav.getByRole("link", { name: new RegExp("^" + name) }).click();
+    await expect(page.locator("main h1").first()).toBeVisible();
+  }
+  await openApp(page, "/matters/anderson");
+  bootstraps = 0;
+  await page.evaluate(() => {
+    (window as unknown as { __boots: number }).__boots = 0;
+    new MutationObserver(() => {
+      if (document.querySelector(".boot"))
+        (window as unknown as { __boots: number }).__boots++;
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  const tabs = page.getByRole("navigation", { name: "Matter sections" });
+  for (const t of ["Documents", "Strategy", "Agent chat", "Overview"]) {
+    await tabs.getByRole("link", { name: new RegExp("^" + t) }).click();
+    await expect(page.locator("main h1")).toHaveText(
+      "Anderson v. Meridian Tech",
+    );
+  }
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { __boots: number }).__boots,
+    ),
+  ).toBe(0);
+  expect(bootstraps).toBe(0);
+});

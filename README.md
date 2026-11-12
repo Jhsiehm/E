@@ -62,7 +62,7 @@ Demo sessions use a separate HTTP-only cookie and a server-memory map with a 24-
 
 ## Structure
 
-- `app/[[...path]]/page.tsx`: route entry for the prototype's screens.
+- `app/(workspace)/layout.tsx`: mounts the workspace once so it persists across navigations; `app/(workspace)/[[...path]]/page.tsx` matches every screen path.
 - `components/Workspace.tsx`: app shell (sidebar, route table, toast, dialogs).
 - `components/workspace/`: `useWorkspaceController.ts` (client state and actions), `context.tsx` (`useWorkspace()`), `pages/` (one file per screen), `matter/` (matter header and tabs), `modals/` (one file per dialog), `shared.tsx` and `ui.tsx` (reusable blocks and primitives), `format.ts`.
 - `components/ResearchProgress.tsx`: imported motion vocabulary implemented in React.
