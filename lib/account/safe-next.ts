@@ -13,6 +13,8 @@ export function safeNext(
   try {
     const u = new URL(value, origin);
     if (u.origin !== new URL(origin).origin) return fallback;
+    // "/.//evil.com" resolves to pathname "//evil.com": protocol-relative.
+    if (u.pathname.startsWith("//")) return fallback;
     return u.pathname + u.search + u.hash;
   } catch {
     return fallback;

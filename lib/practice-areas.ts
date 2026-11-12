@@ -2,9 +2,10 @@
  * The one practice-area catalog for Casevex. Onboarding, layouts, the ask bar
  * and agent profiles all use these stable keys; labels can change freely.
  *
- * agentStatus follows the handoff spec (01, Agents): only the pilot areas
- * have a research agent today; others are labeled honestly until their
- * sources and evaluations are ready. Any area can still shape your layout.
+ * agentStatus follows the handoff spec (01, Agents) and Joshua's 2026-11-12
+ * rule that no area goes past beta until attorney reviewers sign off: the two
+ * pilot areas are beta, the rest "coming later" until their sources and
+ * evaluations are ready. Any area can still shape your layout.
  */
 export type AgentStatus = "available" | "beta" | "coming_later";
 export type LayoutPreset = "litigation" | "transactional" | "regulatory";

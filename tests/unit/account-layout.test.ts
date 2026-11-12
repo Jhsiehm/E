@@ -161,6 +161,9 @@ describe("safeNext", () => {
       "/\r\\evil.com",
       "javascript:alert(1)",
       "http://casevex.vercel.app.evil.com/",
+      "/.//evil.com",
+      "/a/..//evil.com",
+      "https://casevex.vercel.app//evil.com",
     ])
       expect(safeNext(v, o)).toBe("/");
   });
