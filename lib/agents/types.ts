@@ -22,6 +22,12 @@ export const PRACTICE_AREA_KEYS = [
   "regulatory",
   "real_estate",
   "international",
+  "civil_rights",
+  "criminal_defense",
+  "personal_injury",
+  "family",
+  "intellectual_property",
+  "immigration",
 ] as const;
 export type PracticeAreaKey = (typeof PRACTICE_AREA_KEYS)[number];
 

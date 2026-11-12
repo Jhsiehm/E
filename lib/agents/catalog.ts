@@ -300,6 +300,37 @@ export const AGENT_CATALOG: readonly AgentConfig[] = [
     "International",
     "Cross-border matters.",
   ),
+  comingLater(
+    "civil_rights",
+    "civil_rights",
+    "Civil rights",
+    "Civil rights claims and defenses.",
+  ),
+  comingLater(
+    "criminal_defense",
+    "criminal_defense",
+    "Criminal defense",
+    "Criminal procedure and defense.",
+  ),
+  comingLater(
+    "personal_injury",
+    "personal_injury",
+    "Personal injury",
+    "Negligence and injury claims.",
+  ),
+  comingLater("family", "family", "Family", "Divorce, custody and support."),
+  comingLater(
+    "intellectual_property",
+    "intellectual_property",
+    "Intellectual property",
+    "Patents, trademarks and copyright.",
+  ),
+  comingLater(
+    "immigration",
+    "immigration",
+    "Immigration",
+    "Visas, status and removal.",
+  ),
 ];
 
 /**

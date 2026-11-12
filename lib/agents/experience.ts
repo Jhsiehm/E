@@ -75,16 +75,18 @@ export const FEATURE_LEVEL: Record<Feature, ExperienceLevel> = {
 /** Features that also need a role, whatever the level. */
 const ADMIN_ONLY: readonly Feature[] = ["firm_agent_versions"];
 
-export type Role = "attorney" | "paralegal" | "student" | "admin";
+/** profiles.persona from onboarding; admin rights come from the workspace membership. */
+export type Role = "attorney" | "paralegal" | "student" | "other";
 
 export interface ExperienceContext {
   level: ExperienceLevel;
   role: Role;
+  isAdmin?: boolean;
 }
 
 /** Whether a feature is shown up front. Hidden features stay in "More options". */
 export function shows(feature: Feature, ctx: ExperienceContext): boolean {
-  if (ADMIN_ONLY.includes(feature) && ctx.role !== "admin") return false;
+  if (ADMIN_ONLY.includes(feature) && !ctx.isAdmin) return false;
   return ORDER.indexOf(ctx.level) >= ORDER.indexOf(FEATURE_LEVEL[feature]);
 }
 

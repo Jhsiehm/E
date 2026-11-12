@@ -194,9 +194,13 @@ describe("AI experience levels", () => {
     expect(
       shows("firm_agent_versions", { level: "full", role: "attorney" }),
     ).toBe(false);
-    expect(shows("firm_agent_versions", { level: "full", role: "admin" })).toBe(
-      true,
-    );
+    expect(
+      shows("firm_agent_versions", {
+        level: "full",
+        role: "attorney",
+        isAdmin: true,
+      }),
+    ).toBe(true);
   });
 
   it("students get learning mode by default", () => {
