@@ -13,13 +13,32 @@ npm run dev
 
 Open http://localhost:3000. For another port: `npm run dev -- --port 3011`.
 
+`npm run dev` serves synthetic sample data (fixture mode). A production build
+(`npm run build && npm start`) is **live mode by default** and answers every API
+call with `503 service_not_configured` until the real backend exists. To run the
+public demo from a production build, opt in explicitly:
+
 ```sh
-npm run typecheck
-npm run build
-npm start
-# With the server running:
-npm test
+CASEVEX_DATA_MODE=fixture npm start
 ```
+
+`CASEVEX_DEPLOYMENT=pilot` refuses fixture mode outright. See
+`docs/decisions/0003-fixture-and-live-adapters.md`.
+
+## Checks
+
+```sh
+npm run lint          # ESLint (next/core-web-vitals + typescript)
+npm run format:check  # Prettier
+npm run typecheck
+npm run test:unit     # Vitest: API client, data-mode guard, API contract tests
+npm run build
+npm run test:integration  # node:test; starts `next start` itself (needs a build)
+npm run test:e2e      # Playwright, 5 viewports; starts `next start` in fixture mode
+```
+
+`npm test` runs unit + integration. CI (`.github/workflows/ci.yml`) runs all of
+the above on every pull request.
 
 ## Try the flows
 
@@ -44,10 +63,15 @@ Demo sessions use a separate HTTP-only cookie and a server-memory map with a 24-
 ## Structure
 
 - `app/[[...path]]/page.tsx`: route entry for the prototype's screens.
-- `components/Workspace.tsx`: connected screen components and interactions.
+- `components/Workspace.tsx`: app shell (sidebar, route table, toast, dialogs).
+- `components/workspace/`: `useWorkspaceController.ts` (client state and actions), `context.tsx` (`useWorkspace()`), `pages/` (one file per screen), `matter/` (matter header and tabs), `modals/` (one file per dialog), `shared.tsx` and `ui.tsx` (reusable blocks and primitives), `format.ts`.
 - `components/ResearchProgress.tsx`: imported motion vocabulary implemented in React.
-- `app/api/[...path]/route.ts`: mock HTTP adapter, with 300 ms artificial latency.
+- `app/api/[...path]/route.ts`: dispatches to the fixture or live adapter (`lib/runtime/data-mode.ts`).
+- `lib/adapters/fixture/prototype-api.ts`: mock HTTP adapter, with 300 ms artificial latency. `lib/adapters/live.ts`: live adapter (503 until P1).
+- `lib/api/client.ts`: typed fetch client (errors, retries, cursors). `lib/contracts/api.ts`: shared wire types.
 - `lib/mock/`: typed seed data and session store.
+- `tests/`: `unit/`, `contract/` (Vitest), `integration/` (node:test), `e2e/` (Playwright).
+- `docs/decisions/`: architecture decision records.
 - `app/globals.css`, `tailwind.config.ts`: supplied tokens, responsive layout, motion.
 - `docs/BACKEND_PLAN.md`: architecture, permissions, pipelines, APIs, phases, decisions.
 - `docs/schema-draft.sql`: illustrative core schema, not a production migration.
