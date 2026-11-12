@@ -19,7 +19,7 @@ type MutationResult = { id: string } & Record<string, unknown>;
  * Data still comes from the prototype's full-state bootstrap; P1+ replaces
  * this with scoped hooks on lib/api/client.ts.
  */
-export function useWorkspaceController() {
+export function useWorkspaceController(defaultPractice = "Civil litigation") {
   const pathname = usePathname(),
     router = useRouter(),
     params = useSearchParams();
@@ -34,7 +34,7 @@ export function useWorkspaceController() {
     [selected, setSelected] = useState(""),
     [busy, setBusy] = useState(false),
     [question, setQuestion] = useState(""),
-    [practice, setPractice] = useState("Civil litigation"),
+    [practice, setPractice] = useState(defaultPractice),
     [analysis, setAnalysis] = useState("Recommended approach"),
     [editing, setEditing] = useState(false),
     [summary, setSummary] = useState(""),

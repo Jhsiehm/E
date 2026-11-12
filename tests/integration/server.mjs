@@ -64,3 +64,16 @@ export async function startServer(env = {}) {
       }),
   };
 }
+
+/** Cookie for the fixture-mode demo account, already onboarded. */
+export function demoCookie(profile = {}) {
+  const value = Buffer.from(
+    JSON.stringify({
+      fullName: "Test Person",
+      practiceAreas: ["ny_civil_litigation"],
+      onboardedAt: "2026-11-12T00:00:00.000Z",
+      ...profile,
+    }),
+  ).toString("base64url");
+  return `cvx_demo=${value}`;
+}

@@ -1,6 +1,6 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
-import { startServer } from "./server.mjs";
+import { demoCookie, startServer } from "./server.mjs";
 // Fixture-mode prototype API. Uses CASEVEX_TEST_URL if given, else starts
 // `next start` with CASEVEX_DATA_MODE=fixture (production builds are live by default).
 let base = process.env.CASEVEX_TEST_URL;
@@ -12,12 +12,13 @@ before(async () => {
 });
 after(() => server?.stop());
 function client() {
-  let cookie = "";
+  const jar = new Map([demoCookie().split(/=(.*)/s).slice(0, 2)]);
+  const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
   return async (path, method = "GET", body) => {
     const res = await fetch(base + "/api/" + path, {
       method,
       headers: {
-        ...(cookie ? { cookie } : {}),
+        cookie: cookieHeader(),
         ...(body && !(body instanceof FormData)
           ? { "Content-Type": "application/json" }
           : {}),
@@ -28,8 +29,10 @@ function client() {
           : JSON.stringify(body)
         : undefined,
     });
-    if (res.headers.get("set-cookie"))
-      cookie = res.headers.get("set-cookie").split(";")[0];
+    for (const c of res.headers.getSetCookie?.() ?? []) {
+      const [k, v] = c.split(";")[0].split(/=(.*)/s);
+      jar.set(k, v);
+    }
     return { status: res.status, data: await res.json() };
   };
 }
@@ -110,10 +113,15 @@ test("calendar events, profile and agent assignments update", async () => {
   );
   await api("me", "PATCH", { name: "Demo Reviewer" });
   assert.equal((await api("me")).data.name, "Demo Reviewer");
-  await api("agents/corporate", "PATCH", { matterIds: ["anderson"] });
+  await api("agents/consumer", "PATCH", { matterIds: ["anderson"] });
   assert.equal(
     (await api("matters/anderson")).data.assignedAgentId,
-    "corporate",
+    "consumer",
+  );
+  assert.equal(
+    (await api("agents/international", "PATCH", { matterIds: ["anderson"] }))
+      .status,
+    409,
   );
 });
 test("invalid data and missing matters return explicit errors", async () => {
@@ -125,4 +133,18 @@ test("invalid data and missing matters return explicit errors", async () => {
     400,
   );
   assert.equal((await api("precedents", "POST", { citation: "" })).status, 400);
+});
+
+test("the API refuses requests from someone who is not signed in", async () => {
+  const res = await fetch(base + "/api/bootstrap");
+  assert.equal(res.status, 401);
+  const body = await res.json();
+  assert.equal(body.error.code, "unauthenticated");
+  assert.doesNotMatch(JSON.stringify(body), /Anderson|Meridian|Nexora/);
+});
+
+test("pages send signed-out visitors to sign-in", async () => {
+  const res = await fetch(base + "/matters", { redirect: "manual" });
+  assert.equal(res.status, 307);
+  assert.match(res.headers.get("location"), /\/sign-in\?next=%2Fmatters$/);
 });

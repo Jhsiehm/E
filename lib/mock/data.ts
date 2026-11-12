@@ -1,3 +1,9 @@
+import {
+  agentForPracticeArea,
+  statusForPracticeArea,
+  type AgentStatus,
+  type PracticeAreaKey,
+} from "@/lib/agents";
 export type Matter = {
   id: string;
   name: string;
@@ -58,7 +64,9 @@ export type Agent = {
   practiceArea: string;
   description: string;
   matterCount: number;
-  availability: string;
+  /** available | beta | coming_later, from lib/agents. */
+  availability: AgentStatus;
+  practiceAreaKey: PracticeAreaKey;
 };
 export type Precedent = {
   id: string;
@@ -330,21 +338,29 @@ export function seed(): State {
         createdAt: "2026-11-09T12:00:00Z",
       },
     ],
-    agents: [
-      ["civil", "Civil", "Civil litigation", 12],
-      ["corporate", "Corporate", "Corporate", 8],
-      ["trust", "Trust and estate", "Trust and estate", 5],
-      ["regulatory", "Regulatory", "Regulatory", 6],
-      ["international", "International", "International", 4],
-      ["contract", "Contract", "Contracts", 11],
-    ].map(([id, name, practiceArea, matterCount]) => ({
-      id: String(id),
-      name: String(name),
-      practiceArea: String(practiceArea),
-      matterCount: Number(matterCount),
-      description: `Research, document analysis, and strategy support for ${String(practiceArea).toLowerCase()} matters.`,
-      availability: "available",
-    })),
+    // Readiness comes from the agent catalog (lib/agents), never hard-coded.
+    agents: (
+      [
+        ["consumer", "consumer_class_action", 0],
+        ["civil", "ny_civil_litigation", 12],
+        ["corporate", "corporate", 8],
+        ["trust", "trust_estate", 5],
+        ["regulatory", "regulatory", 6],
+        ["international", "international", 4],
+        ["contract", "contracts", 11],
+      ] as const
+    ).map(([id, key, matterCount]) => {
+      const agent = agentForPracticeArea(key)!;
+      return {
+        id,
+        name: agent.displayName,
+        practiceArea: agent.displayName,
+        practiceAreaKey: key,
+        matterCount,
+        description: agent.description,
+        availability: statusForPracticeArea(key),
+      };
+    }),
     // Real citations below must be verified before use. All verification badges in this prototype are simulated.
     precedents: [
       {
