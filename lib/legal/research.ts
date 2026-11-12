@@ -197,8 +197,8 @@ Return JSON: {"verdicts": [{"claim": "C1", "status": string, "reason": string}]}
 
 export interface ResearchOptions {
   complete?: Complete;
-  /** USD number or the shared RunBudget from @/lib/ai. */
-  budgetUsd?: number | object;
+  /** Per-call USD ceiling. */
+  budgetUsd?: number;
   signal?: AbortSignal;
   /** Skip the separate support-check call (e.g. tight budget). */
   skipSupportCheck?: boolean;
@@ -296,7 +296,7 @@ const run = (
 ): ModelRun => ({
   task,
   modelId: r.modelId,
-  provider: r.provider,
+  provider: r.provider ?? "unknown",
   costUsd: r.costUsd,
   promptVersion,
 });

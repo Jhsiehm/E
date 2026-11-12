@@ -29,8 +29,8 @@ export interface CompleteRequest<T> {
   task: LegalModelTask;
   messages: ModelMessage[];
   responseSchema?: ResponseSchema<T> | ((value: unknown) => T);
-  /** USD number, or the shared RunBudget object from @/lib/ai. */
-  budgetUsd: number | object;
+  /** One-off USD ceiling. (A shared RunBudget comes with the lib/ai re-export.) */
+  budgetUsd?: number;
   promptVersion?: string;
   signal?: AbortSignal;
 }
@@ -38,7 +38,7 @@ export interface CompleteRequest<T> {
 export interface CompleteResult<T> {
   output: T;
   modelId: string;
-  provider: string;
+  provider?: string;
   costUsd: number;
 }
 
