@@ -3,6 +3,7 @@ import {
   AiError,
   RunBudget,
   complete,
+  resolveGateway,
   resolveRoute,
   runAiFunction,
   toUsageEvent,
@@ -232,5 +233,147 @@ describe("runAiFunction", () => {
     expect(
       resolveRoute("research.plan", { CASEVEX_DEPLOYMENT: "pilot" }).providers,
     ).toEqual(["anthropic", "google-vertex"]);
+  });
+});
+
+describe("gateways", () => {
+  const anthropicOk = (text: string) =>
+    reply({
+      id: "msg_1",
+      model: "claude-sonnet-5-5",
+      content: [{ type: "text", text }],
+      usage: { input_tokens: 1000, output_tokens: 100 },
+    });
+
+  it("prefers OpenRouter when both keys are set, unless forced", () => {
+    const both = { OPENROUTER_API_KEY: "or", ANTHROPIC_API_KEY: "an" };
+    const chain = resolveRoute("research.plan", {}).chain;
+    expect(resolveGateway("research.plan", chain, both).gateway).toBe(
+      "openrouter",
+    );
+    expect(
+      resolveGateway("research.plan", chain, {
+        ...both,
+        CASEVEX_AI_GATEWAY: "anthropic",
+      }),
+    ).toMatchObject({
+      gateway: "anthropic",
+      apiKey: "an",
+      chain: ["anthropic/claude-sonnet-5.5"],
+    });
+    expect(() =>
+      resolveGateway("research.plan", chain, {
+        ANTHROPIC_API_KEY: "an",
+        CASEVEX_AI_GATEWAY: "openrouter",
+      }),
+    ).toThrow(/OPENROUTER_API_KEY is not set/);
+    expect(() => resolveGateway("research.plan", chain, {})).toThrow(
+      /No AI key/,
+    );
+  });
+
+  it("says which functions need OpenRouter on an Anthropic-only key", () => {
+    const chain = resolveRoute("research.verify_support", {}).chain;
+    expect(() =>
+      resolveGateway("research.verify_support", chain, {
+        ANTHROPIC_API_KEY: "an",
+      }),
+    ).toThrow(/Anthropic does not serve/);
+  });
+
+  it("calls the Anthropic Messages API directly with the Claude model id", async () => {
+    const f = vi.fn(async () => anthropicOk('{"issue":"reliance"}'));
+    const r = await runAiFunction(
+      "research.plan",
+      {
+        messages: [
+          { role: "system", content: "Plan it." },
+          { role: "user", content: "Question" },
+        ],
+      },
+      deps(f as unknown as typeof fetch, { ANTHROPIC_API_KEY: "an-key" }),
+    );
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.anthropic.com/v1/messages");
+    const h = init.headers as Record<string, string>;
+    expect(h["x-api-key"]).toBe("an-key");
+    expect(h["anthropic-version"]).toBe("2023-06-01");
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      model: "claude-sonnet-5-5",
+      system: "Plan it.",
+      messages: [{ role: "user", content: "Question" }],
+    });
+    expect(r.data).toEqual({ issue: "reliance" });
+    expect(r.usage).toMatchObject({
+      gateway: "anthropic",
+      modelUsed: "anthropic/claude-sonnet-5.5",
+      fellBack: false,
+      costSource: "estimate",
+    });
+    expect(r.usage.costUsd).toBeCloseTo((1000 * 2 + 100 * 10) / 1e6);
+    expect(toUsageEvent(r.usage, { workspaceId: "w" }).provider).toBe(
+      "anthropic",
+    );
+  });
+
+  it("falls back across Claude models when one is overloaded", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValue(anthropicOk("Title"))
+      .mockResolvedValueOnce(reply({ error: { message: "overloaded" } }, 529))
+      .mockResolvedValueOnce(reply({ error: { message: "overloaded" } }, 529))
+      .mockResolvedValueOnce(reply({ error: { message: "overloaded" } }, 529));
+    const env = {
+      ANTHROPIC_API_KEY: "an",
+      CASEVEX_AI_OVERRIDES: JSON.stringify({
+        "research.thread_title": [
+          "anthropic/claude-sonnet-5.5",
+          "anthropic/claude-haiku-5.5",
+        ],
+      }),
+    };
+    const r = await runAiFunction(
+      "research.thread_title",
+      { messages: msgs },
+      deps(f as unknown as typeof fetch, env),
+    );
+    expect(r.usage.modelUsed).toBe("anthropic/claude-haiku-5.5");
+    expect(r.usage.fellBack).toBe(true);
+    const lastBody = JSON.parse(
+      (f.mock.calls[3] as unknown as [string, RequestInit])[1].body as string,
+    );
+    expect(lastBody.model).toBe("claude-haiku-5-5");
+  });
+
+  it("prices a dated slug without reported cost, never as zero", async () => {
+    const f = vi.fn(async () =>
+      ok('{"issue":"x"}', {
+        model: "anthropic/claude-sonnet-5.5-20261101",
+        usage: { prompt_tokens: 1000, completion_tokens: 100 },
+      }),
+    );
+    const budget = new RunBudget(1);
+    const r = await runAiFunction(
+      "research.plan",
+      { messages: msgs, budget },
+      deps(f as unknown as typeof fetch),
+    );
+    expect(r.usage.fellBack).toBe(false);
+    expect(r.usage.costUsd).toBeCloseTo((1000 * 2 + 100 * 10) / 1e6);
+    expect(budget.spentUsd).toBeGreaterThan(0);
+  });
+
+  it("retries a 200 with a non-JSON body, then reports a provider error", async () => {
+    const bad = () => new Response("<html>gateway</html>", { status: 200 });
+    const f = vi.fn(async () => bad());
+    await expect(
+      runAiFunction(
+        "research.thread_title",
+        { messages: msgs },
+        deps(f as unknown as typeof fetch),
+      ),
+    ).rejects.toMatchObject({ code: "provider_error" });
+    expect(f).toHaveBeenCalledTimes(3);
   });
 });

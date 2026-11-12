@@ -1,5 +1,5 @@
 import { AI_FUNCTIONS, type AiFunctionKey } from "./functions";
-import { MODELS, isModelId, priceCall } from "./models";
+import { MODELS, getModel, isModelId, priceCall, type ModelId } from "./models";
 import { resolveRoute, type ResolvedRoute } from "./routing";
 
 /**
@@ -14,7 +14,10 @@ import { resolveRoute, type ResolvedRoute } from "./routing";
  *     parse: parseRerank,
  *   });
  *
- * Guarantees: the API key never leaves the server; confidential functions
+ * Gateways: OpenRouter (OPENROUTER_API_KEY, every model) or Anthropic direct
+ * (ANTHROPIC_API_KEY, Claude models only); see resolveGateway below.
+ *
+ * Guarantees: the API keys never leave the server; confidential functions
  * are routed only to providers that do not collect or retain data
  * (data_collection=deny, zdr); fallbacks stay inside the approved chain and
  * are reported; cost is taken from OpenRouter's usage accounting; prompt and
@@ -22,6 +25,10 @@ import { resolveRoute, type ResolvedRoute } from "./routing";
  */
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
+/** 529 is Anthropic's "overloaded". */
+const RETRYABLE = [408, 429, 500, 502, 503, 504, 529];
 const MAX_RETRIES = 2;
 const CHARS_PER_TOKEN = 4;
 
@@ -35,6 +42,7 @@ export interface ChatMessage {
 export interface AiUsage {
   functionKey: AiFunctionKey;
   tier: string;
+  gateway: Gateway;
   requestedModel: string;
   modelUsed: string;
   /** Upstream provider OpenRouter routed to, e.g. "Anthropic". */
@@ -43,7 +51,7 @@ export interface AiUsage {
   promptTokens: number;
   completionTokens: number;
   costUsd: number;
-  /** "openrouter" when OpenRouter reported cost, "estimate" when computed from list prices. */
+  /** "openrouter" when OpenRouter reported cost, "estimate" when computed from catalog list prices (always for direct Anthropic). */
   costSource: "openrouter" | "estimate";
   latencyMs: number;
   attempts: number;
@@ -162,15 +170,9 @@ export async function runAiFunction<T = string>(
     deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const random = deps.random ?? Math.random;
 
-  const apiKey = env.OPENROUTER_API_KEY?.trim();
-  if (!apiKey)
-    throw new AiError(
-      "not_configured",
-      "OPENROUTER_API_KEY is not set, so AI functions are off.",
-    );
-
   const route = resolveRoute(key, env);
   const fn = AI_FUNCTIONS[key];
+  const gw = resolveGateway(key, route.chain, env);
   const maxOutputTokens = Math.min(
     opts.maxOutputTokens ?? fn.maxOutputTokens,
     fn.maxOutputTokens,
@@ -188,110 +190,192 @@ export async function runAiFunction<T = string>(
       `${key} could cost up to $${worst.toFixed(4)} but only $${opts.budget.remainingUsd.toFixed(4)} is left in this run's budget.`,
     );
 
-  const body: Record<string, unknown> = {
-    messages: opts.messages,
-    max_tokens: maxOutputTokens,
-    temperature: fn.temperature,
-    usage: { include: true },
-    provider: {
-      data_collection: "deny",
-      ...(route.providers ? { only: route.providers } : {}),
-      ...(fn.dataClass === "confidential" ? { zdr: true } : {}),
-      ...(fn.structuredOutput ? { require_parameters: true } : {}),
-    },
-    ...(fn.structuredOutput
-      ? { response_format: { type: "json_object" } }
-      : {}),
-  };
-  if (route.chain.length > 1) body.models = route.chain;
-  else body.model = route.chain[0];
-
   const started = now();
-  let attempt = 0;
-  for (;;) {
-    attempt++;
-    const timeout = AbortSignal.timeout(route.timeoutMs);
-    const signal = opts.signal
-      ? AbortSignal.any([opts.signal, timeout])
-      : timeout;
-
-    let res: Response;
-    try {
-      res = await doFetch(OPENROUTER_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": env.CASEVEX_APP_URL ?? "https://casevex.vercel.app",
-          "X-Title": "Casevex",
-        },
-        body: JSON.stringify(body),
-        signal,
-      });
-    } catch (err) {
-      if (opts.signal?.aborted)
-        throw new AiError("cancelled", `${key} was cancelled.`);
-      const isTimeout = timeout.aborted;
-      if (attempt <= MAX_RETRIES) {
-        await sleep(backoff(attempt, random));
-        continue;
-      }
-      throw new AiError(
-        isTimeout ? "timeout" : "provider_error",
-        isTimeout
-          ? `${key} timed out after ${route.timeoutMs}ms.`
-          : `Could not reach OpenRouter: ${(err as Error).message}`,
-      );
-    }
-
-    if (!res.ok) {
-      const retryable = [408, 429, 500, 502, 503, 504].includes(res.status);
-      if (retryable && attempt <= MAX_RETRIES) {
-        const ra = Number(res.headers.get("retry-after"));
-        await sleep(
-          Number.isFinite(ra) && ra > 0
-            ? Math.min(ra * 1000, 10_000)
-            : backoff(attempt, random),
+  let attempts = 0;
+  /** POSTs with timeout, retries with jitter on retryable statuses, returns parsed JSON. */
+  const post = async (
+    url: string,
+    headers: Record<string, string>,
+    body: unknown,
+  ): Promise<unknown> => {
+    for (let attempt = 1; ; attempt++) {
+      attempts++;
+      const timeout = AbortSignal.timeout(route.timeoutMs);
+      const signal = opts.signal
+        ? AbortSignal.any([opts.signal, timeout])
+        : timeout;
+      let res: Response;
+      try {
+        res = await doFetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify(body),
+          signal,
+        });
+      } catch (err) {
+        if (opts.signal?.aborted)
+          throw new AiError("cancelled", `${key} was cancelled.`);
+        const isTimeout = timeout.aborted;
+        if (attempt <= MAX_RETRIES) {
+          await sleep(backoff(attempt, random));
+          continue;
+        }
+        throw new AiError(
+          isTimeout ? "timeout" : "provider_error",
+          isTimeout
+            ? `${key} timed out after ${route.timeoutMs}ms.`
+            : `Could not reach ${GATEWAY_LABEL[gw.gateway]}: ${(err as Error).message}`,
         );
-        continue;
       }
-      throw await providerError(res);
+      if (!res.ok) {
+        if (RETRYABLE.includes(res.status) && attempt <= MAX_RETRIES) {
+          const ra = Number(res.headers.get("retry-after"));
+          await sleep(
+            Number.isFinite(ra) && ra > 0
+              ? Math.min(ra * 1000, 10_000)
+              : backoff(attempt, random),
+          );
+          continue;
+        }
+        throw await providerError(res, gw.gateway);
+      }
+      try {
+        return await res.json();
+      } catch {
+        if (attempt <= MAX_RETRIES) {
+          await sleep(backoff(attempt, random));
+          continue;
+        }
+        throw new AiError(
+          "provider_error",
+          `${GATEWAY_LABEL[gw.gateway]} returned a response that is not JSON.`,
+          res.status,
+        );
+      }
     }
+  };
 
-    const json = (await res.json()) as OpenRouterResponse;
+  let reply: NormalizedReply;
+  if (gw.gateway === "openrouter") {
+    const body: Record<string, unknown> = {
+      messages: opts.messages,
+      max_tokens: maxOutputTokens,
+      temperature: fn.temperature,
+      usage: { include: true },
+      provider: {
+        data_collection: "deny",
+        ...(route.providers ? { only: route.providers } : {}),
+        ...(fn.dataClass === "confidential" ? { zdr: true } : {}),
+        ...(fn.structuredOutput ? { require_parameters: true } : {}),
+      },
+      ...(fn.structuredOutput
+        ? { response_format: { type: "json_object" } }
+        : {}),
+    };
+    if (gw.chain.length > 1) body.models = gw.chain;
+    else body.model = gw.chain[0];
+    const json = (await post(
+      OPENROUTER_URL,
+      {
+        Authorization: `Bearer ${gw.apiKey}`,
+        "HTTP-Referer": env.CASEVEX_APP_URL ?? "https://casevex.vercel.app",
+        "X-Title": "Casevex",
+      },
+      body,
+    )) as OpenRouterResponse;
     if (json.error)
       throw new AiError(
         "provider_error",
         `OpenRouter error: ${json.error.message ?? "unknown"}`,
         json.error.code,
       );
-    const text = json.choices?.[0]?.message?.content ?? "";
-    const modelUsed = json.model ?? route.chain[0];
-    const promptTokens = json.usage?.prompt_tokens ?? 0;
-    const completionTokens = json.usage?.completion_tokens ?? 0;
-    const reported = json.usage?.cost;
-    const costUsd =
-      typeof reported === "number"
-        ? reported
-        : isModelId(modelUsed)
-          ? priceCall(MODELS[modelUsed], promptTokens, completionTokens)
-          : 0;
+    reply = {
+      text: json.choices?.[0]?.message?.content ?? "",
+      modelUsed: json.model ?? gw.chain[0],
+      provider: json.provider,
+      promptTokens: json.usage?.prompt_tokens ?? 0,
+      completionTokens: json.usage?.completion_tokens ?? 0,
+      reportedCost: json.usage?.cost,
+      id: json.id,
+    };
+  } else {
+    // Direct Anthropic Messages API. Fallback runs here, in chain order,
+    // only across the Claude models of the approved chain.
+    const system = opts.messages
+      .filter((m) => m.role === "system")
+      .map((m) => m.content)
+      .join("\n\n");
+    const turns = opts.messages.filter((m) => m.role !== "system");
+    let lastErr: unknown;
+    let got: NormalizedReply | undefined;
+    for (const slug of gw.chain) {
+      const spec = getModel(slug as ModelId);
+      try {
+        const json = (await post(
+          ANTHROPIC_URL,
+          { "x-api-key": gw.apiKey, "anthropic-version": ANTHROPIC_VERSION },
+          {
+            model: spec.anthropicModelId,
+            max_tokens: maxOutputTokens,
+            temperature: fn.temperature,
+            ...(system ? { system } : {}),
+            messages: turns,
+          },
+        )) as AnthropicResponse;
+        got = {
+          text: (json.content ?? [])
+            .filter((c) => c.type === "text")
+            .map((c) => c.text ?? "")
+            .join(""),
+          modelUsed: slug,
+          provider: "Anthropic",
+          promptTokens: json.usage?.input_tokens ?? 0,
+          completionTokens: json.usage?.output_tokens ?? 0,
+          id: json.id,
+        };
+        break;
+      } catch (err) {
+        lastErr = err;
+        const fallThrough =
+          err instanceof AiError &&
+          ["provider_error", "rate_limited", "timeout"].includes(err.code);
+        if (!fallThrough) throw err;
+      }
+    }
+    if (!got) throw lastErr;
+    reply = got;
+  }
 
+  const { text, modelUsed, promptTokens, completionTokens, reportedCost } =
+    reply;
+  // Price by the chain entry that served the call (OpenRouter may return a
+  // dated slug). If it cannot be matched, charge the pre-call worst case
+  // rather than 0 so the run budget is never under-counted.
+  const servedBy = route.chain.find((id) => sameModel(modelUsed, id));
+  const costUsd =
+    typeof reportedCost === "number"
+      ? reportedCost
+      : servedBy && isModelId(servedBy)
+        ? priceCall(MODELS[servedBy], promptTokens, completionTokens)
+        : worst;
+
+  {
     const usage: AiUsage = {
       functionKey: key,
       tier: fn.tier,
+      gateway: gw.gateway,
       requestedModel: route.chain[0],
       modelUsed,
-      provider: json.provider,
+      provider: reply.provider,
       fellBack: !sameModel(modelUsed, route.chain[0]),
       promptTokens,
       completionTokens,
       costUsd,
-      costSource: typeof reported === "number" ? "openrouter" : "estimate",
+      costSource: typeof reportedCost === "number" ? "openrouter" : "estimate",
       latencyMs: now() - started,
-      attempts: attempt,
+      attempts,
       promptVersion: opts.promptVersion,
-      generationId: json.id,
+      generationId: reply.id,
     };
     opts.budget?.record(costUsd);
     await opts.onUsage?.(usage);
@@ -316,6 +400,92 @@ export async function runAiFunction<T = string>(
       );
     }
   }
+}
+
+// ---- gateways -----------------------------------------------------------
+
+/**
+ * Which API a call goes through, picked from the keys in the environment:
+ *
+ * - OPENROUTER_API_KEY: every catalog model, with privacy routing.
+ * - ANTHROPIC_API_KEY: Claude models only, straight to Anthropic. Functions
+ *   whose chain has no Claude model (e.g. the independent verifier, bulk
+ *   feed triage) need OpenRouter.
+ *
+ * CASEVEX_AI_GATEWAY=auto (default) prefers OpenRouter when its key is set,
+ * otherwise Anthropic. Set it to "openrouter" or "anthropic" to force one.
+ */
+export type Gateway = "openrouter" | "anthropic";
+
+const GATEWAY_LABEL: Record<Gateway, string> = {
+  openrouter: "OpenRouter",
+  anthropic: "Anthropic",
+};
+
+export function resolveGateway(
+  key: AiFunctionKey,
+  chain: readonly string[],
+  env: Env,
+): { gateway: Gateway; apiKey: string; chain: string[] } {
+  const pref = (env.CASEVEX_AI_GATEWAY?.trim() || "auto").toLowerCase();
+  if (!["auto", "openrouter", "anthropic"].includes(pref))
+    throw new AiError(
+      "not_configured",
+      `CASEVEX_AI_GATEWAY must be auto, openrouter or anthropic (got "${pref}").`,
+    );
+  const orKey = env.OPENROUTER_API_KEY?.trim();
+  const anKey = env.ANTHROPIC_API_KEY?.trim();
+  const claude = chain.filter(
+    (id) => isModelId(id) && getModel(id).anthropicModelId,
+  );
+
+  const viaOpenRouter = () => {
+    if (!orKey)
+      throw new AiError(
+        "not_configured",
+        "CASEVEX_AI_GATEWAY=openrouter but OPENROUTER_API_KEY is not set.",
+      );
+    return { gateway: "openrouter" as const, apiKey: orKey, chain: [...chain] };
+  };
+  const viaAnthropic = () => {
+    if (!anKey)
+      throw new AiError(
+        "not_configured",
+        "CASEVEX_AI_GATEWAY=anthropic but ANTHROPIC_API_KEY is not set.",
+      );
+    if (!claude.length)
+      throw new AiError(
+        "not_configured",
+        `${key} runs on ${chain.join(", ")}, which Anthropic does not serve. Set OPENROUTER_API_KEY, or override it to a Claude model.`,
+      );
+    return { gateway: "anthropic" as const, apiKey: anKey, chain: claude };
+  };
+
+  if (pref === "openrouter") return viaOpenRouter();
+  if (pref === "anthropic") return viaAnthropic();
+  if (orKey) return viaOpenRouter();
+  if (anKey) return viaAnthropic();
+  throw new AiError(
+    "not_configured",
+    "No AI key is set. Add OPENROUTER_API_KEY or ANTHROPIC_API_KEY to turn AI functions on.",
+  );
+}
+
+interface NormalizedReply {
+  text: string;
+  modelUsed: string;
+  provider?: string;
+  promptTokens: number;
+  completionTokens: number;
+  reportedCost?: number;
+  id?: string;
+}
+
+interface AnthropicResponse {
+  id?: string;
+  model?: string;
+  content?: { type: string; text?: string }[];
+  usage?: { input_tokens?: number; output_tokens?: number };
 }
 
 // ---- helpers ------------------------------------------------------------
@@ -344,11 +514,15 @@ function stripFences(s: string) {
   return m ? m[1] : s;
 }
 
-async function providerError(res: Response): Promise<AiError> {
-  let message = `OpenRouter returned ${res.status}.`;
+async function providerError(
+  res: Response,
+  gateway: Gateway,
+): Promise<AiError> {
+  const name = GATEWAY_LABEL[gateway];
+  let message = `${name} returned ${res.status}.`;
   try {
-    const b = (await res.json()) as OpenRouterResponse;
-    if (b.error?.message) message = `OpenRouter: ${b.error.message}`;
+    const b = (await res.json()) as { error?: { message?: string } };
+    if (b.error?.message) message = `${name}: ${b.error.message}`;
   } catch {
     /* body was not JSON */
   }
@@ -399,7 +573,12 @@ export function toUsageEvent(
     workspace_id: ctx.workspaceId,
     user_id: ctx.userId ?? null,
     run_id: ctx.runId ?? null,
-    provider: usage.provider ? `openrouter/${usage.provider}` : "openrouter",
+    provider:
+      usage.gateway === "anthropic"
+        ? "anthropic"
+        : usage.provider
+          ? `openrouter/${usage.provider}`
+          : "openrouter",
     units: {
       function_key: usage.functionKey,
       tier: usage.tier,

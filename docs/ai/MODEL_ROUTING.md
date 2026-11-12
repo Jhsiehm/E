@@ -80,6 +80,25 @@ const { output, modelId, provider, costUsd, usage } = await complete({
 Server-only: the client throws if imported in the browser, and the API key
 is only read from the server environment.
 
+## API keys and gateways
+
+Two keys are supported, and both can be set at once:
+
+| Key | Reaches | Notes |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | Every catalog model | Privacy routing (`data_collection: deny`, `zdr`, pinned hosts) and real cost from OpenRouter. |
+| `ANTHROPIC_API_KEY` | Claude models only, direct to Anthropic | Cost is estimated from catalog prices. Fallback runs across the Claude models in the chain. |
+
+`CASEVEX_AI_GATEWAY` picks between them: `auto` (default) uses OpenRouter
+when its key is set and Anthropic otherwise; `openrouter` or `anthropic`
+forces one.
+
+With only the Anthropic key, each function runs on the Claude models in its
+chain (the `fast` tier, for example, uses its Haiku fallback and reports
+`fellBack: true`). Functions with no Claude model in their chain fail with a
+"set OPENROUTER_API_KEY" error: `research.verify_support` (it must not be
+the same vendor as the drafter) and the `bulk` tier.
+
 ## Testing models with OpenRouter
 
 1. Put your key in `.env.local` (git-ignored): `OPENROUTER_API_KEY=sk-or-...`

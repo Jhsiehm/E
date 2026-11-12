@@ -43,6 +43,8 @@ export interface ModelSpec {
    * provider's no-training / retention terms before pilot.
    */
   approvedProviders?: readonly string[];
+  /** Model id on Anthropic's own API, for the direct ANTHROPIC_API_KEY gateway. */
+  anthropicModelId?: string;
   notes?: string;
 }
 
@@ -56,6 +58,7 @@ export const MODELS = {
     contextTokens: 1_000_000,
     maxDataClass: "confidential",
     approvedProviders: ["anthropic"],
+    anthropicModelId: "claude-opus-5-5",
   },
   "anthropic/claude-sonnet-5.5": {
     id: "anthropic/claude-sonnet-5.5",
@@ -66,6 +69,7 @@ export const MODELS = {
     contextTokens: 1_000_000,
     maxDataClass: "confidential",
     approvedProviders: ["anthropic"],
+    anthropicModelId: "claude-sonnet-5-5",
   },
   "anthropic/claude-haiku-5.5": {
     id: "anthropic/claude-haiku-5.5",
@@ -76,6 +80,7 @@ export const MODELS = {
     contextTokens: 1_000_000,
     maxDataClass: "confidential",
     approvedProviders: ["anthropic"],
+    anthropicModelId: "claude-haiku-5-5",
   },
   "openai/gpt-6.1-sol": {
     id: "openai/gpt-6.1-sol",
