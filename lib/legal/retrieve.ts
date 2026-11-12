@@ -138,9 +138,25 @@ export async function retrieve(
       .filter((c) => c.status === "resolved")
       .flatMap((c) => [c.normalized, c.citation]),
   );
-  const unresolvedCitations = parsed
-    .filter((c) => !resolvedNorm.has(c.normalized) && !resolvedNorm.has(c.raw))
-    .map((c) => c.raw);
+  const unresolvedCitations = [
+    ...new Set([
+      ...parsed
+        .filter(
+          (c) => !resolvedNorm.has(c.normalized) && !resolvedNorm.has(c.raw),
+        )
+        .map((c) => c.raw),
+      // Cites a provider recognized but could not resolve (incl. reporters
+      // the parser does not know), unless another provider resolved them.
+      ...citations
+        .filter(
+          (c) =>
+            (c.status === "unresolved" || c.status === "unsupported") &&
+            !resolvedNorm.has(c.normalized) &&
+            !resolvedNorm.has(c.citation),
+        )
+        .map((c) => c.citation),
+    ]),
+  ];
 
   // 2. Provider search (main query, planned queries, OR fallback on zero).
   const queries = [

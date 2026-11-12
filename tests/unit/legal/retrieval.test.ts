@@ -50,6 +50,8 @@ describe("retrieve (fixture provider)", () => {
       r.citations.find((c) => c.normalized === "7 Synth. 700")?.status,
     ).toBe("unresolved");
     expect(r.unresolvedCitations).toContain("550 U.S. 544");
+    expect(r.unresolvedCitations).toContain("7 Synth. 700");
+    expect(r.unresolvedCitations).not.toContain("3 Synth. 300");
     expect(
       r.evidence.some(
         (e) => e.authority.id === "fixture:op-3" && e.citedInQuestion,
