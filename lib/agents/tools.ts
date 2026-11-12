@@ -1,3 +1,4 @@
+import type { AiFunctionKey } from "@/lib/ai/functions";
 import type { ToolKey } from "./types";
 
 /**
@@ -27,7 +28,7 @@ export interface ToolSpec {
   /** Matter-scoped tools need an authorized matter; never cross matters. */
   matterScoped: boolean;
   /** AI function keys from the routing registry this tool calls. */
-  aiFunctions: readonly string[];
+  aiFunctions: readonly AiFunctionKey[];
 }
 
 export const TOOLS: Record<ToolKey, ToolSpec> = {

@@ -1,3 +1,5 @@
+import type { Tier } from "@/lib/ai/tiers";
+
 /**
  * Agent profile types, following docs/handoff/04_RESEARCH_AGENTS.md
  * ("Agents: configuration not standalone actors").
@@ -40,11 +42,8 @@ export type PracticeAreaKey = (typeof PRACTICE_AREA_KEYS)[number];
  */
 export type AgentStatus = "available" | "beta" | "coming_later";
 
-/**
- * Model tier names from the routing work (lib/ai/tiers.ts on the
- * ai-model-routing branch). Agents name tiers, never raw model ids.
- */
-export type TierName = "frontier" | "reasoning" | "fast" | "bulk";
+/** Model tier names from lib/ai/tiers.ts. Agents name tiers, never raw model ids. */
+export type TierName = Tier;
 
 /** Workflows from spec 04 "Research modes". */
 export type Workflow =
