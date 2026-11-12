@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Icon from "@/components/Icon";
 import { saveProfile, signOut } from "@/lib/account/actions";
-import { PRESETS, buildLayout } from "@/lib/account/layout";
+import { buildLayout } from "@/lib/account/layout";
 import type { Profile } from "@/lib/account/profile";
 import {
   AboutFields,
@@ -101,9 +101,7 @@ export default function OnboardingFlow({ initial }: { initial: Profile }) {
             {step === 4 && (
               <div className="workspace-step">
                 <div className="preview-col">
-                  <p className="eyebrow">
-                    {PRESETS[layout.preset].label} layout
-                  </p>
+                  <p className="eyebrow">Sidebar preview</p>
                   <SidebarPreview value={draft} />
                   <div className="prompt-preview">
                     <p className="eyebrow">
