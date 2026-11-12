@@ -99,7 +99,7 @@ export const TOOLS: Record<ToolKey, ToolSpec> = {
     kind: "draft",
     requiresConfirmation: true,
     matterScoped: true,
-    aiFunctions: ["research.draft"],
+    aiFunctions: ["letter.draft"],
   },
   build_chronology: {
     key: "build_chronology",
@@ -109,7 +109,7 @@ export const TOOLS: Record<ToolKey, ToolSpec> = {
     kind: "draft",
     requiresConfirmation: true,
     matterScoped: true,
-    aiFunctions: ["research.document_qa"],
+    aiFunctions: ["document.chronology"],
   },
   suggest_watch: {
     key: "suggest_watch",
