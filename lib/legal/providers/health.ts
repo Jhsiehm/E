@@ -21,6 +21,11 @@ export class HealthTracker {
     }
   }
 
+  /** Has answered successfully and is not stale. */
+  confirmed(): boolean {
+    return !!this.lastSucceededAt && !this.snapshot().stale;
+  }
+
   snapshot() {
     const ok = this.lastSucceededAt ? Date.parse(this.lastSucceededAt) : 0;
     return {

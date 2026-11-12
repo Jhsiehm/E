@@ -127,7 +127,9 @@ export class NyLegislationAdapter implements LegalProviderAdapter {
       scope:
         "Current text of New York consolidated laws as published by the NY Senate. Not an official annotated code; historical versions limited to what the API exposes.",
       treatmentCoverage: "none",
+      collections: ["ny_legislation"],
       ...this.health.snapshot(),
+      corpusConfirmed: configured && this.health.confirmed(),
       termsUrl: "https://legislation.nysenate.gov/",
     };
   }

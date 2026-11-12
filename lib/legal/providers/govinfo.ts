@@ -91,7 +91,9 @@ export class GovInfoAdapter implements LegalProviderAdapter {
       scope:
         "United States Code and annual Code of Federal Regulations editions published on GovInfo. Annual editions can lag current law.",
       treatmentCoverage: "none",
+      collections: ["federal_statutes_regulations"],
       ...this.health.snapshot(),
+      corpusConfirmed: configured && this.health.confirmed(),
       termsUrl: "https://www.govinfo.gov/about/policies",
     };
   }

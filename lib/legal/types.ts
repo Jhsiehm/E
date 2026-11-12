@@ -9,6 +9,15 @@
 export type ProviderId =
   "courtlistener" | "ny_legislation" | "govinfo" | "fixture";
 
+/** Shared with lib/agents catalog (sourceCollectionAllowlist). */
+export type SourceCollection =
+  | "ny_official_reports"
+  | "ny_state_opinions"
+  | "federal_opinions_licensed"
+  | "ny_legislation"
+  | "federal_statutes_regulations"
+  | "synthetic_fixtures";
+
 export type AuthorityKind = "opinion" | "statute" | "regulation";
 
 export type LicenseStatus =
@@ -123,6 +132,16 @@ export interface ProviderCoverage {
   lastError: string | null;
   stale: boolean;
   termsUrl: string;
+  /**
+   * Source collection keys (04 sourceCollectionAllowlist) this provider serves.
+   * Agent profiles reference these, never provider IDs.
+   */
+  collections: SourceCollection[];
+  /**
+   * True only when the provider is enabled and has answered successfully
+   * without going stale. Agent readiness gates use this per collection.
+   */
+  corpusConfirmed: boolean;
 }
 
 /** Thrown by adapters; mapped to 502/503/429 by the API layer. */

@@ -226,7 +226,9 @@ export class CourtListenerAdapter implements LegalProviderAdapter {
       scope:
         "Opinions CourtListener holds for NY state courts, the Second Circuit, NY federal district courts and the Supreme Court. Coverage varies by court and date; not a complete reporter set.",
       treatmentCoverage: "none",
+      collections: ["ny_state_opinions", "federal_opinions_licensed"],
       ...this.health.snapshot(),
+      corpusConfirmed: configured && this.health.confirmed(),
       termsUrl: "https://www.courtlistener.com/terms/",
     };
   }

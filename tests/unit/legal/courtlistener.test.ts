@@ -147,6 +147,16 @@ describe("CourtListenerAdapter", () => {
     expect(hits[0].snippet).toBe("a plausible claim");
   });
 
+  it("confirms its corpus only after a successful call", async () => {
+    const a = adapter();
+    expect(a.getCoverage().corpusConfirmed).toBe(false);
+    await a.search({ q: "pleading" });
+    expect(a.getCoverage()).toMatchObject({
+      corpusConfirmed: true,
+      stale: false,
+    });
+  });
+
   it("returns nothing for jurisdictions it does not cover, without a request", async () => {
     const before = routes.calls.length;
     expect(await adapter().search({ q: "x", jurisdictionIds: ["CA"] })).toEqual(

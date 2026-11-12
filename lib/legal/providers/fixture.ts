@@ -113,9 +113,11 @@ export class FixtureAdapter implements LegalProviderAdapter {
       scope:
         "Four synthetic records for development and tests. Never real authority.",
       treatmentCoverage: "none",
+      collections: ["synthetic_fixtures"],
       lastSucceededAt: null,
       lastError: null,
       stale: false,
+      corpusConfirmed: true,
       termsUrl: "https://example.invalid/terms",
     };
   }
