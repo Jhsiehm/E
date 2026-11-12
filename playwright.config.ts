@@ -8,6 +8,7 @@ const PORT = Number(process.env.E2E_PORT || 3123);
  */
 export default defineConfig({
   testDir: "tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -15,6 +16,7 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "off",
+    storageState: "tests/e2e/.auth/demo.json",
     reducedMotion: "reduce",
     launchOptions: process.env.PW_CHROMIUM_PATH
       ? { executablePath: process.env.PW_CHROMIUM_PATH }
