@@ -113,10 +113,15 @@ test("calendar events, profile and agent assignments update", async () => {
   );
   await api("me", "PATCH", { name: "Demo Reviewer" });
   assert.equal((await api("me")).data.name, "Demo Reviewer");
-  await api("agents/corporate", "PATCH", { matterIds: ["anderson"] });
+  await api("agents/consumer", "PATCH", { matterIds: ["anderson"] });
   assert.equal(
     (await api("matters/anderson")).data.assignedAgentId,
-    "corporate",
+    "consumer",
+  );
+  assert.equal(
+    (await api("agents/international", "PATCH", { matterIds: ["anderson"] }))
+      .status,
+    409,
   );
 });
 test("invalid data and missing matters return explicit errors", async () => {
