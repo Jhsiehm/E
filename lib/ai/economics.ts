@@ -60,6 +60,8 @@ export const PILOT_FIRM: Scenario = {
     "research.compare_authorities": 40,
     "research.document_qa": 200,
     "motion.draft": 20,
+    "document.chronology": 30,
+    "letter.draft": 40,
     "document.classify": 600,
     "document.summarize": 600,
     "document.extract_deadlines": 600,

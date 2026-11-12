@@ -174,6 +174,37 @@ const fns = [
     why: "Long persuasive legal writing with citations and placeholders. Low volume, high stakes.",
   },
 
+  {
+    key: "document.chronology",
+    label: "Build a chronology from matter documents",
+    surfaces: ["web"],
+    phase: "P4",
+    tier: "reasoning",
+    dataClass: "confidential",
+    structuredOutput: true,
+    temperature: 0,
+    typicalInputTokens: 15_000,
+    typicalOutputTokens: 1_500,
+    maxOutputTokens: 3_000,
+    maxUsdPerCall: 0.12,
+    why: "Dated events with page cites from the client's own documents. Factual extraction over long input, so mid tier; an attorney reviews it.",
+  },
+  {
+    key: "letter.draft",
+    label: "Draft a client letter",
+    surfaces: ["web"],
+    phase: "P4",
+    tier: "frontier",
+    dataClass: "confidential",
+    structuredOutput: false,
+    temperature: 0.3,
+    typicalInputTokens: 8_000,
+    typicalOutputTokens: 1_500,
+    maxOutputTokens: 2_500,
+    maxUsdPerCall: 0.3,
+    why: "Explains legal position to a client in plain language. Tone and accuracy both matter and an attorney signs it, so frontier, with a lower ceiling than motions.",
+  },
+
   // ---- Documents (P2) ---------------------------------------------------
   {
     key: "document.classify",
