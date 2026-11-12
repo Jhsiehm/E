@@ -20,6 +20,9 @@ oracle, decide which is right before changing either: the oracle encodes
 docs/handoff/02 and 04.
 
 `npm run test:cross` runs these locally; CI runs them on every PR as part of
-`test:unit`. `npm run test:bias` runs the live audit (needs
-`OPENROUTER_API_KEY`); the `bias-eval` workflow runs it weekly once the repo
-variable `CASEVEX_BIAS_EVAL_ENABLED=true` and the secret are set.
+`test:unit`, with no model calls and no keys.
+
+The live bias audit makes real model calls and only runs locally: put
+`OPENROUTER_API_KEY` (or `ANTHROPIC_API_KEY`) in `.env.local` (git-ignored)
+and run `npm run test:bias`. Keys are not stored in GitHub. The deployed app
+reads the same variable names from Vercel's environment settings.

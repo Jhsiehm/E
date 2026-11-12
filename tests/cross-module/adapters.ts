@@ -38,6 +38,7 @@ export interface RoutingRequest {
   budgetUsd?: number;
   env?: Record<string, string | undefined>;
   signal?: AbortSignal;
+  system?: string;
 }
 
 export interface RoutingResult {
@@ -361,7 +362,12 @@ export async function routingAdapter(): Promise<RoutingAdapter | null> {
       const r = await ai.runAiFunction(
         req.task,
         {
-          messages: [{ role: "user", content: req.prompt }],
+          messages: [
+            ...(req.system
+              ? [{ role: "system" as const, content: req.system }]
+              : []),
+            { role: "user" as const, content: req.prompt },
+          ],
           budget:
             budget ??
             (req.budgetUsd !== undefined
