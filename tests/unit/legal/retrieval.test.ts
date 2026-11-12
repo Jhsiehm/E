@@ -195,6 +195,7 @@ describe("answerQuestion", () => {
         modelId: `test/${req.task}`,
         provider: "test",
         costUsd: 0.001,
+        usage: {} as never,
       };
     };
     // make sure S1 is the elements passage for the quote checks
@@ -233,6 +234,7 @@ describe("answerQuestion", () => {
       modelId: "m",
       provider: "p",
       costUsd: 0,
+      usage: {} as never,
     });
     const a = await answerQuestion(question, r, { complete });
     expect(a.abstained).toBe(true);
@@ -260,6 +262,7 @@ describe("answerQuestion", () => {
         modelId: "m",
         provider: "p",
         costUsd: 0,
+        usage: {} as never,
       };
     };
     await answerQuestion(question, r, { complete });
