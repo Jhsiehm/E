@@ -10,7 +10,9 @@ import type {
  *
  * These are illustrative launch defaults, bounded by validateAgentConfig.
  * Source collection names are configuration, not proof of licensed access;
- * the retrieval adapters (P3) decide what is actually searchable.
+ * the retrieval adapters (P3) decide what is actually searchable. Keys match
+ * SourceCollection in lib/legal/types.ts (PR #5); NY opinions arrive from
+ * CourtListener as ny_state_opinions.
  */
 
 const NO_EVIDENCE: ReadinessEvidence = {
@@ -77,6 +79,8 @@ const ALL_TOOLS = [
 
 const NY_FEDERAL = ["NY", "2d-cir", "sdny", "edny", "ndny", "wdny"] as const;
 const NY_SOURCES = [
+  "ny_state_opinions",
+  // No provider yet (no API, rights review pending); never confirms.
   "ny_official_reports",
   "federal_opinions_licensed",
   "ny_legislation",
@@ -142,7 +146,7 @@ export const AGENT_CATALOG: readonly AgentConfig[] = [
           "Statute of limitations",
           "Contrary authority in this court",
         ],
-        preferredSources: ["ny_official_reports", "ny_legislation"],
+        preferredSources: ["ny_state_opinions", "ny_legislation"],
         status: "beta",
       },
       {
@@ -168,7 +172,7 @@ export const AGENT_CATALOG: readonly AgentConfig[] = [
           "Class waiver enforceability",
           "Unconscionability defenses",
         ],
-        preferredSources: ["federal_opinions_licensed", "ny_official_reports"],
+        preferredSources: ["federal_opinions_licensed", "ny_state_opinions"],
         status: "beta",
       },
     ],
@@ -209,7 +213,7 @@ export const AGENT_CATALOG: readonly AgentConfig[] = [
           "Leave to amend",
           "Contrary authority in this court",
         ],
-        preferredSources: ["ny_official_reports", "federal_opinions_licensed"],
+        preferredSources: ["ny_state_opinions", "federal_opinions_licensed"],
         status: "beta",
       },
       {
@@ -221,7 +225,7 @@ export const AGENT_CATALOG: readonly AgentConfig[] = [
           "Admissible evidence",
           "Contrary authority in this court",
         ],
-        preferredSources: ["ny_official_reports", "federal_opinions_licensed"],
+        preferredSources: ["ny_state_opinions", "federal_opinions_licensed"],
         status: "beta",
       },
     ],
