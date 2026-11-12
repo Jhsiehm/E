@@ -35,7 +35,9 @@ export const LEVEL_LABEL: Record<ExperienceLevel, string> = {
 
 /** Skipped or unknown answers start at Guided. */
 export function levelFor(ai: AiExperience | null | undefined): ExperienceLevel {
-  return ai && ai in LEVEL_FOR ? LEVEL_FOR[ai] : "guided";
+  return ai && Object.prototype.hasOwnProperty.call(LEVEL_FOR, ai)
+    ? LEVEL_FOR[ai]
+    : "guided";
 }
 
 export type Feature =

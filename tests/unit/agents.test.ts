@@ -177,6 +177,8 @@ describe("AI experience levels", () => {
     expect(levelFor("advanced")).toBe("full");
     expect(levelFor(null)).toBe("guided");
     expect(levelFor(undefined)).toBe("guided");
+    for (const bad of ["__proto__", "constructor", "toString", "expert"])
+      expect(levelFor(bad as never)).toBe("guided");
   });
 
   it("each level adds to the one before", () => {
