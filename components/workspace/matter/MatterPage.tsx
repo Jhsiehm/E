@@ -73,8 +73,7 @@ export default function MatterPage() {
             aria-current={sub === t ? "page" : undefined}
           >
             {t === "chat" ? "Agent chat" : label(t)}
-            {t === "documents" &&
-              ` (${matter.documentCount + documents.filter((d) => !d.id.startsWith("doc")).length})`}
+            {t === "documents" && ` (${documents.length})`}
             {t === "notices" && hasImpact(matter.id) && (
               <Chip tone="rose">1</Chip>
             )}
