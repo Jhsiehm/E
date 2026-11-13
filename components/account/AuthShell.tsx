@@ -1,3 +1,4 @@
+import Logo from "@/components/Logo";
 import type { ReactNode } from "react";
 
 /** Split layout for sign-in screens: form on paper, navy brand panel. */
@@ -5,14 +6,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="auth-shell">
       <main className="auth-main">
-        <div className="auth-brand">
-          <span className="logo-grid">
-            {Array.from({ length: 16 }, (_, i) => (
-              <i key={i} />
-            ))}
-          </span>
-          Casevex
-        </div>
+        <Logo tone="paper" className="auth-brand" />
         <div className="auth-card">{children}</div>
         <p className="auth-foot">
           Research aid for attorney review. Your matters stay private to your

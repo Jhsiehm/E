@@ -2774,100 +2774,113 @@ html[data-intro="seen"] .intro {
   }
 }
 
-/* Hovering the Casevex mark ripples it like the opening card: a diagonal
-   wave through the cells, repeating while the pointer stays. On the navy
-   rail the wave runs through the mark's own light colours so no cell
-   disappears into the background; on paper it uses the opening card's. */
-.brand:hover .logo-grid i:nth-child(1),
-.brand:focus-visible .logo-grid i:nth-child(1),
-.auth-brand:hover .logo-grid i:nth-child(1) {
-  animation-delay: 0.00s;
-}
-.brand:hover .logo-grid i:nth-child(2),
-.brand:focus-visible .logo-grid i:nth-child(2),
-.auth-brand:hover .logo-grid i:nth-child(2) {
-  animation-delay: 0.11s;
-}
-.brand:hover .logo-grid i:nth-child(3),
-.brand:focus-visible .logo-grid i:nth-child(3),
-.auth-brand:hover .logo-grid i:nth-child(3) {
-  animation-delay: 0.22s;
-}
-.brand:hover .logo-grid i:nth-child(4),
-.brand:focus-visible .logo-grid i:nth-child(4),
-.auth-brand:hover .logo-grid i:nth-child(4) {
-  animation-delay: 0.33s;
-}
-.brand:hover .logo-grid i:nth-child(5),
-.brand:focus-visible .logo-grid i:nth-child(5),
-.auth-brand:hover .logo-grid i:nth-child(5) {
-  animation-delay: 0.11s;
-}
-.brand:hover .logo-grid i:nth-child(6),
-.brand:focus-visible .logo-grid i:nth-child(6),
-.auth-brand:hover .logo-grid i:nth-child(6) {
-  animation-delay: 0.22s;
-}
-.brand:hover .logo-grid i:nth-child(7),
-.brand:focus-visible .logo-grid i:nth-child(7),
-.auth-brand:hover .logo-grid i:nth-child(7) {
-  animation-delay: 0.33s;
-}
-.brand:hover .logo-grid i:nth-child(8),
-.brand:focus-visible .logo-grid i:nth-child(8),
-.auth-brand:hover .logo-grid i:nth-child(8) {
-  animation-delay: 0.44s;
-}
-.brand:hover .logo-grid i:nth-child(9),
-.brand:focus-visible .logo-grid i:nth-child(9),
-.auth-brand:hover .logo-grid i:nth-child(9) {
-  animation-delay: 0.22s;
-}
-.brand:hover .logo-grid i:nth-child(10),
-.brand:focus-visible .logo-grid i:nth-child(10),
-.auth-brand:hover .logo-grid i:nth-child(10) {
-  animation-delay: 0.33s;
-}
-.brand:hover .logo-grid i:nth-child(11),
-.brand:focus-visible .logo-grid i:nth-child(11),
-.auth-brand:hover .logo-grid i:nth-child(11) {
-  animation-delay: 0.44s;
-}
-.brand:hover .logo-grid i:nth-child(12),
-.brand:focus-visible .logo-grid i:nth-child(12),
-.auth-brand:hover .logo-grid i:nth-child(12) {
-  animation-delay: 0.55s;
-}
-.brand:hover .logo-grid i:nth-child(13),
-.brand:focus-visible .logo-grid i:nth-child(13),
-.auth-brand:hover .logo-grid i:nth-child(13) {
-  animation-delay: 0.33s;
-}
-.brand:hover .logo-grid i:nth-child(14),
-.brand:focus-visible .logo-grid i:nth-child(14),
-.auth-brand:hover .logo-grid i:nth-child(14) {
-  animation-delay: 0.44s;
-}
-.brand:hover .logo-grid i:nth-child(15),
-.brand:focus-visible .logo-grid i:nth-child(15),
-.auth-brand:hover .logo-grid i:nth-child(15) {
-  animation-delay: 0.55s;
-}
-.brand:hover .logo-grid i:nth-child(16),
-.brand:focus-visible .logo-grid i:nth-child(16),
-.auth-brand:hover .logo-grid i:nth-child(16) {
-  animation-delay: 0.66s;
-}
-.brand:hover .logo-grid i,
-.brand:focus-visible .logo-grid i,
-.auth-brand:hover .logo-grid i {
+/* The Casevex mark (components/Logo.tsx) ripples like the opening card
+   wherever it appears: a diagonal colour wave through its 16 cells while
+   the pointer rests on the logo (or it has keyboard focus), and
+   continuously while the workspace is loading. On navy it cycles the
+   mark's own light colours so no cell disappears; on paper it uses the
+   opening card's colours. Reduced motion turns it off. */
+.logo:hover .logo-grid i,
+.logo-link:focus-visible .logo-grid i,
+.logo-grid.is-loading i {
   animation-name: logo-wave-dark;
   animation-duration: 1.8s;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }
-.auth-brand:hover .logo-grid i {
+.logo-paper:hover .logo-grid i,
+.logo-link:focus-visible .logo-paper .logo-grid i,
+.logo-paper .logo-grid.is-loading i {
   animation-name: logo-wave-paper;
+}
+.logo:hover .logo-grid i:nth-child(1),
+.logo-link:focus-visible .logo-grid i:nth-child(1),
+.logo-grid.is-loading i:nth-child(1) {
+  animation-delay: 0.00s;
+}
+.logo:hover .logo-grid i:nth-child(2),
+.logo-link:focus-visible .logo-grid i:nth-child(2),
+.logo-grid.is-loading i:nth-child(2) {
+  animation-delay: 0.11s;
+}
+.logo:hover .logo-grid i:nth-child(3),
+.logo-link:focus-visible .logo-grid i:nth-child(3),
+.logo-grid.is-loading i:nth-child(3) {
+  animation-delay: 0.22s;
+}
+.logo:hover .logo-grid i:nth-child(4),
+.logo-link:focus-visible .logo-grid i:nth-child(4),
+.logo-grid.is-loading i:nth-child(4) {
+  animation-delay: 0.33s;
+}
+.logo:hover .logo-grid i:nth-child(5),
+.logo-link:focus-visible .logo-grid i:nth-child(5),
+.logo-grid.is-loading i:nth-child(5) {
+  animation-delay: 0.11s;
+}
+.logo:hover .logo-grid i:nth-child(6),
+.logo-link:focus-visible .logo-grid i:nth-child(6),
+.logo-grid.is-loading i:nth-child(6) {
+  animation-delay: 0.22s;
+}
+.logo:hover .logo-grid i:nth-child(7),
+.logo-link:focus-visible .logo-grid i:nth-child(7),
+.logo-grid.is-loading i:nth-child(7) {
+  animation-delay: 0.33s;
+}
+.logo:hover .logo-grid i:nth-child(8),
+.logo-link:focus-visible .logo-grid i:nth-child(8),
+.logo-grid.is-loading i:nth-child(8) {
+  animation-delay: 0.44s;
+}
+.logo:hover .logo-grid i:nth-child(9),
+.logo-link:focus-visible .logo-grid i:nth-child(9),
+.logo-grid.is-loading i:nth-child(9) {
+  animation-delay: 0.22s;
+}
+.logo:hover .logo-grid i:nth-child(10),
+.logo-link:focus-visible .logo-grid i:nth-child(10),
+.logo-grid.is-loading i:nth-child(10) {
+  animation-delay: 0.33s;
+}
+.logo:hover .logo-grid i:nth-child(11),
+.logo-link:focus-visible .logo-grid i:nth-child(11),
+.logo-grid.is-loading i:nth-child(11) {
+  animation-delay: 0.44s;
+}
+.logo:hover .logo-grid i:nth-child(12),
+.logo-link:focus-visible .logo-grid i:nth-child(12),
+.logo-grid.is-loading i:nth-child(12) {
+  animation-delay: 0.55s;
+}
+.logo:hover .logo-grid i:nth-child(13),
+.logo-link:focus-visible .logo-grid i:nth-child(13),
+.logo-grid.is-loading i:nth-child(13) {
+  animation-delay: 0.33s;
+}
+.logo:hover .logo-grid i:nth-child(14),
+.logo-link:focus-visible .logo-grid i:nth-child(14),
+.logo-grid.is-loading i:nth-child(14) {
+  animation-delay: 0.44s;
+}
+.logo:hover .logo-grid i:nth-child(15),
+.logo-link:focus-visible .logo-grid i:nth-child(15),
+.logo-grid.is-loading i:nth-child(15) {
+  animation-delay: 0.55s;
+}
+.logo:hover .logo-grid i:nth-child(16),
+.logo-link:focus-visible .logo-grid i:nth-child(16),
+.logo-grid.is-loading i:nth-child(16) {
+  animation-delay: 0.66s;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: default;
+}
+.logo-link .logo {
+  cursor: pointer;
 }
 @keyframes logo-wave-dark {
   0% {

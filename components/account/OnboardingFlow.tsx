@@ -1,4 +1,5 @@
 "use client";
+import Logo from "@/components/Logo";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Icon from "@/components/Icon";
@@ -54,14 +55,7 @@ export default function OnboardingFlow({ initial }: { initial: Profile }) {
   return (
     <div className="onboard">
       <aside className="onboard-rail">
-        <div className="brand">
-          <span className="logo-grid">
-            {Array.from({ length: 16 }, (_, i) => (
-              <i key={i} />
-            ))}
-          </span>
-          Casevex
-        </div>
+        <Logo className="brand" />
         <ol>
           {STEPS.map(([name], i) => (
             <li
