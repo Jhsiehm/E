@@ -14,6 +14,27 @@ export default defineConfig([
       "react-hooks/refs": "warn",
     },
   },
+  {
+    // Keep files small enough to review in one sitting and to give each
+    // module one job (security review, ownership, smaller blast radius).
+    // See docs/decisions/0009-file-size-limit.md.
+    files: ["**/*.{ts,tsx,mjs,js}"],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 300, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    files: ["tests/**/*.{ts,tsx,mjs}"],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 400, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
   globalIgnores([
     ".next/**",
     "out/**",
