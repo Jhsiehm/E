@@ -1926,7 +1926,7 @@ textarea {
 a {
   text-underline-offset: 3px;
 }
-/* Paper grain from the prototype, at half its strength there, with a
+/* Paper grain from the prototype, at three quarters of its strength, with a
    fainter version of its grey edge falloff. Painted once on the page so
    nested surfaces never double it. */
 html,
