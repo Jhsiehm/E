@@ -2902,6 +2902,7 @@ html[data-intro="seen"] .intro {
   100% {
     background-color: #393a10;
   }
+}
 /* Practice sample cases: labelled everywhere they appear. */
 .sample-banner {
   display: flex;
