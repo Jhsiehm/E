@@ -100,7 +100,7 @@ describe.skipIf(!TEST_DB_URL)("matters database", () => {
     });
   });
 
-  it("only owners/admins on the matter can share it, and only within the firm", async () => {
+  it("owners, admins and attorneys on the matter can share it, only within the firm", async () => {
     const add = (
       who: Parameters<TestDb["as"]>[0],
       matter: string,
@@ -118,6 +118,9 @@ describe.skipIf(!TEST_DB_URL)("matters database", () => {
       "42501",
     );
     expect(await add("attorneyA1", M1, uuidFor(actors.paralegalA2.id))).toBe(
+      "ok",
+    );
+    expect(await add("paralegalA2", OPEN, uuidFor(actors.attorneyA1.id))).toBe(
       "42501",
     );
     expect(await add("ownerA", OPEN, uuidFor(actors.paralegalA2.id))).toBe(
