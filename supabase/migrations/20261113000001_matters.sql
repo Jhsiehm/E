@@ -80,7 +80,8 @@ as $$
   where m.workspace_id = ws and m.user_id = (select auth.uid()) and m.status = 'active';
 $$;
 
--- action: read | write | delete | export | share (share = change who is on the matter).
+-- action: read | write | delete | export | share (share = change who is on the matter)
+--   | confirm (sign off a deadline).
 -- matter null = a firm-level check (create a matter in this firm).
 create function private.can(ws uuid, matter uuid, action text)
 returns boolean
@@ -104,6 +105,7 @@ begin
     when 'write' then r in ('owner', 'admin', 'attorney', 'paralegal')
     when 'delete' then r in ('owner', 'admin', 'attorney')
     when 'export' then r in ('owner', 'admin', 'attorney')
+    when 'confirm' then r in ('owner', 'admin', 'attorney')
     when 'share' then r in ('owner', 'admin')
     else false
   end;
@@ -162,7 +164,9 @@ grant select, delete on public.matters to authenticated;
 grant update (name, docket, court, practice_area, party_role, summary, status, assigned_agent_key)
   on public.matters to authenticated;
 grant select on public.matter_members to authenticated;
-grant select, insert, delete on public.matter_deadlines to authenticated;
+grant select, delete on public.matter_deadlines to authenticated;
+grant insert (workspace_id, matter_id, title, due_on, kind, created_by, confirmed_by, confirmed_at)
+  on public.matter_deadlines to authenticated;
 grant update (title, due_on, kind, confirmed_by, confirmed_at) on public.matter_deadlines to authenticated;
 grant select on public.matter_strategy to authenticated;
 grant insert (matter_id, workspace_id, body) on public.matter_strategy to authenticated;
@@ -188,6 +192,40 @@ begin
   return new;
 end;
 $$;
+-- A deadline is confirmed only by an attorney, admin or owner on the matter,
+-- only in their own name, and the time is stamped here (any confirmed_at the
+-- app sends is ignored). Changing the title,
+-- date or kind of a confirmed deadline clears the confirmation.
+create function private.guard_deadline_confirmation()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'UPDATE' then
+    if new.confirmed_by is not distinct from old.confirmed_by then
+      if (new.title, new.due_on, new.kind) is distinct from (old.title, old.due_on, old.kind) then
+        new.confirmed_by := null;
+        new.confirmed_at := null;
+      else
+        new.confirmed_at := old.confirmed_at;
+      end if;
+      return new;
+    end if;
+  end if;
+  if new.confirmed_by is null then
+    new.confirmed_at := null;
+    return new;
+  end if;
+  if new.confirmed_by is distinct from (select auth.uid())
+     or not private.can(new.workspace_id, new.matter_id, 'confirm') then
+    raise exception 'only an attorney on this matter can confirm a deadline, in their own name'
+      using errcode = '42501';
+  end if;
+  new.confirmed_at := now();
+  return new;
+end;
+$$;
+create trigger deadlines_confirm before insert or update on public.matter_deadlines
+  for each row execute function private.guard_deadline_confirmation();
+
 create trigger matters_bump before update on public.matters
   for each row execute function private.bump_version();
 create trigger deadlines_touch before update on public.matter_deadlines

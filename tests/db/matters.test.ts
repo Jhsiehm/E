@@ -156,6 +156,70 @@ describe.skipIf(!TEST_DB_URL)("matters database", () => {
     expect(await insert(A, M2)).not.toBe("ok"); // RLS or the composite key
   });
 
+  it("deadlines are confirmed only by an attorney on the matter, in their own name", async () => {
+    const id = (who: keyof typeof actors) => uuidFor(actors[who].id);
+    const add = (
+      who: Parameters<TestDb["as"]>[0],
+      confirmedBy: string | null,
+    ) =>
+      db.as(who, (c) =>
+        sqlState(
+          c.query(
+            "insert into public.matter_deadlines (workspace_id, matter_id, title, due_on, created_by, confirmed_by) values ($1, $2, 'Answer due', '2026-12-01', $3, $4)",
+            [A, OPEN, id(who as keyof typeof actors), confirmedBy],
+          ),
+        ),
+      );
+    expect(await add("paralegalA2", id("attorneyA1"))).toBe("42501");
+    expect(await add("paralegalA2", id("paralegalA2"))).toBe("42501");
+    expect(await add("attorneyA1", id("ownerA"))).toBe("42501");
+    expect(await add("attorneyA1", id("attorneyA1"))).toBe("ok");
+    // confirmed_at is stamped by the database; a value sent without a
+    // confirmation is dropped.
+    const stamped = await db.as("paralegalA2", async (c) => {
+      const { rows } = await c.query(
+        "insert into public.matter_deadlines (workspace_id, matter_id, title, due_on, created_by, confirmed_at) values ($1, $2, 'X', '2026-12-01', $3, now()) returning confirmed_at",
+        [A, OPEN, id("paralegalA2")],
+      );
+      return rows[0].confirmed_at;
+    });
+    expect(stamped).toBeNull();
+  });
+
+  it("a paralegal cannot confirm a deadline, and moving a confirmed date clears it", async () => {
+    await db.as("attorneyA1", async (c) => {
+      const me = uuidFor(actors.attorneyA1.id);
+      const { rows } = await c.query(
+        "insert into public.matter_deadlines (workspace_id, matter_id, title, due_on, created_by, confirmed_by) values ($1, $2, 'Reply', '2026-12-01', $3, $3) returning id, confirmed_at",
+        [A, OPEN, me],
+      );
+      expect(rows[0].confirmed_at).not.toBeNull();
+      await c.query(
+        "update public.matter_deadlines set due_on = '2026-12-05' where id = $1",
+        [rows[0].id],
+      );
+      const after = await c.query(
+        "select confirmed_by, confirmed_at from public.matter_deadlines where id = $1",
+        [rows[0].id],
+      );
+      expect(after.rows[0]).toEqual({ confirmed_by: null, confirmed_at: null });
+    });
+    const forged = await db.as("paralegalA2", async (c) => {
+      const me = uuidFor(actors.paralegalA2.id);
+      const { rows } = await c.query(
+        "insert into public.matter_deadlines (workspace_id, matter_id, title, due_on, created_by) values ($1, $2, 'Serve', '2026-12-02', $3) returning id",
+        [A, OPEN, me],
+      );
+      return sqlState(
+        c.query(
+          "update public.matter_deadlines set confirmed_by = $2 where id = $1",
+          [rows[0].id, uuidFor(actors.attorneyA1.id)],
+        ),
+      );
+    });
+    expect(forged).toBe("42501");
+  });
+
   it("strategy notes save for writers and are read-only for viewers", async () => {
     const save = (who: Parameters<TestDb["as"]>[0]) =>
       db.as(who, (c) =>
