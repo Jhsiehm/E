@@ -1926,9 +1926,27 @@ textarea {
 a {
   text-underline-offset: 3px;
 }
-main {
-  background-image: url("/textures/paper.png");
-  background-size: 160px 160px;
+/* Paper grain from the prototype, at half its strength there, with a
+   fainter version of its grey edge falloff. Painted once on the page so
+   nested surfaces never double it. */
+html,
+.paper {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(
+      ellipse 125% 95% at 50% 38%,
+      rgba(243, 242, 238, 0) 60%,
+      rgba(70, 72, 72, 0.025) 100%
+    ),
+    url("/textures/paper-fine.png");
+  background-size:
+    100% 100%,
+    160px 160px;
+  background-repeat: no-repeat, repeat;
+  background-attachment: fixed, scroll;
+}
+body {
+  background: transparent;
 }
 .research-progress {
   margin: 16px 0;
@@ -2610,4 +2628,148 @@ button.wide {
 }
 .density-compact .page-body {
   gap: 10px;
+}
+
+/* Opening card (components/IntroSplash.tsx), timings from the prototype. */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px;
+  color: var(--navy);
+  pointer-events: none;
+  animation: intro-out 0.5s ease 2.4s forwards;
+}
+html[data-intro="seen"] .intro {
+  display: none;
+}
+.intro-inner {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+}
+.intro-mark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 26px;
+  animation: intro-fade 0.2s linear both;
+}
+.intro-mark rect {
+  fill: var(--olive);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: intro-pop, intro-wave;
+  animation-duration: 0.18s, 1.8s;
+  animation-timing-function: ease, ease-in-out;
+  animation-iteration-count: 1, infinite;
+  animation-fill-mode: forwards, none;
+}
+.intro-rule {
+  height: 1px;
+  background: var(--navy);
+  transform-origin: center;
+  animation: intro-rule 0.6s cubic-bezier(0.7, 0, 0.2, 1) 0.55s both;
+}
+.intro-rule-double {
+  height: 3px;
+  background: none;
+  border-top: 1px solid var(--navy);
+  border-bottom: 1px solid var(--navy);
+}
+.intro-dateline {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  animation: intro-fade 0.4s linear 0.8s both;
+}
+.intro-greeting {
+  margin-top: 30px;
+  font-size: 44px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-align: center;
+  animation: intro-rise 0.55s var(--motion-ease) 1s both;
+}
+.intro-due {
+  margin-top: 12px;
+  font-size: 17px;
+  font-style: italic;
+  color: var(--muted);
+  text-align: center;
+  animation: intro-rise 0.55s var(--motion-ease) 1.2s both;
+}
+@keyframes intro-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes intro-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes intro-wave {
+  0% {
+    fill: #393a10;
+  }
+  25% {
+    fill: #62929e;
+  }
+  50% {
+    fill: #142f40;
+  }
+  75% {
+    fill: #a6445d;
+  }
+  100% {
+    fill: #393a10;
+  }
+}
+@keyframes intro-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes intro-rise {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@media (max-width: 520px) {
+  .intro-greeting {
+    font-size: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    display: none;
+  }
 }

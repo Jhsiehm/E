@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { replayIntroNextLoad } from "@/components/IntroSplash";
 import Icon from "@/components/Icon";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { demoSignIn } from "@/lib/account/actions";
@@ -38,6 +39,8 @@ export default function AuthForm({
     LINK_ERRORS[params.get("error") ?? ""] ?? "",
   );
   const [sent, setSent] = useState("");
+  // Whatever way they sign in from here, the workspace opens with the intro.
+  useEffect(replayIntroNextLoad, []);
   const google = process.env.NEXT_PUBLIC_SUPABASE_GOOGLE === "on";
 
   const callback = (to: string) =>

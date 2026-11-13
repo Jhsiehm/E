@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import Workspace from "@/components/Workspace";
+import IntroSplash from "@/components/IntroSplash";
 import { AccountProvider } from "@/components/account/AccountProvider";
 import { getAccount } from "@/lib/account/server";
 
@@ -21,8 +22,11 @@ export default async function WorkspaceLayout({
   const account = await getAccount();
   if (!account.user || !account.profile) redirect("/sign-in");
   if (!account.profile.onboardedAt) redirect("/onboarding");
+  const { profile } = account;
+  const firstName = (profile.fullName || profile.email).split(/[\s@]/)[0];
   return (
     <AccountProvider mode={account.mode} initial={account.profile}>
+      <IntroSplash firstName={firstName} timeZone={profile.timeZone} />
       <Suspense fallback={<div className="boot">Opening Casevex…</div>}>
         <Workspace />
       </Suspense>
