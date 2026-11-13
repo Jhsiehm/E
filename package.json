@@ -20,7 +20,9 @@
     "ai:smoke": "tsx scripts/ai-smoke.ts",
     "test:cross": "vitest run tests/shared tests/cross-module",
     "test:bias": "CASEVEX_BIAS_EVAL=1 node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run tests/cross-module/fairness.test.ts",
-    "test:db": "vitest run --no-file-parallelism tests/db tests/cross-module/access.test.ts"
+    "test:db": "vitest run --no-file-parallelism tests/db tests/cross-module/access.test.ts",
+    "worker": "tsx worker/index.ts",
+    "worker:build": "esbuild worker/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/worker.mjs --external:pg-native --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -36,6 +38,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10",
+    "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.6",
     "pg": "^8.23.1",

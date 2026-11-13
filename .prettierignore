@@ -7,3 +7,4 @@ playwright-report
 docs
 *.md
 app/globals.css
+dist

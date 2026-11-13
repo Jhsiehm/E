@@ -85,3 +85,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:db
+
+  worker-image:
+    name: Worker container builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f worker/Dockerfile -t casevex-worker .
