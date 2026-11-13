@@ -2989,3 +2989,76 @@ html[data-intro="seen"] .intro {
   text-transform: uppercase;
   vertical-align: middle;
 }
+
+/* Guided tour: a corner card that leaves the screen usable. */
+.sample-banner-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tour-card {
+  position: fixed;
+  right: 24px;
+  bottom: 22px;
+  z-index: 40;
+  width: min(400px, calc(100vw - 32px));
+  padding: 18px 20px 16px;
+  border: 1px solid var(--navy);
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: 0 16px 40px #0f223038;
+}
+.tour-card h2 {
+  margin: 4px 0 8px;
+  font-size: 22px;
+}
+.tour-card p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.tour-card .eyebrow {
+  font-size: 11px;
+}
+.tour-progress {
+  display: flex;
+  gap: 4px;
+  margin: 14px 0 12px;
+}
+.tour-progress i {
+  flex: 1;
+  height: 3px;
+  background: var(--rule);
+}
+.tour-progress i.on {
+  background: var(--teal);
+}
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tour-actions .grow {
+  flex: 1;
+}
+.tour-target {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  transition: outline-color 0.2s;
+}
+@media (max-width: 600px) {
+  .tour-card {
+    right: 16px;
+    bottom: 16px;
+    padding: 14px 16px 12px;
+  }
+  .tour-card p {
+    font-size: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-target {
+    transition: none;
+  }
+}

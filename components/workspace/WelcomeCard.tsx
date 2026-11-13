@@ -1,13 +1,14 @@
 "use client";
 import Icon from "@/components/Icon";
 import { useWorkspace } from "@/components/workspace/context";
+import { startTour } from "@/components/workspace/tour/Tour";
 
 /**
  * First thing a new account sees: an empty workspace, with a way to add a
  * real matter or, in the demo, to practise on made-up sample cases.
  */
 export default function WelcomeCard() {
-  const { data, open, mutate, notify, busy } = useWorkspace();
+  const { data, open, mutate, busy } = useWorkspace();
   if (data.matters.length > 0) return null;
   return (
     <section className="welcome-card" aria-labelledby="welcome-title">
@@ -25,19 +26,18 @@ export default function WelcomeCard() {
           <button
             disabled={busy}
             onClick={async () => {
-              if (await mutate("samples", {}))
-                notify("Five sample cases added. Remove them any time.");
+              if (await mutate("samples", {})) startTour();
             }}
           >
-            Practice with sample cases
+            Take the guided tour
           </button>
         )}
       </div>
       {data.samples === "off" && (
         <small>
-          Sample cases are a guided tour: five made-up matters with documents,
-          deadlines and rulings you can try things on. They are clearly
-          labelled, and you can remove them with one click.
+          The tour takes about two minutes. It adds five made-up sample matters
+          to practise on, clearly labelled, and walks you through them. You can
+          stop at any time and remove them with one click.
         </small>
       )}
     </section>
