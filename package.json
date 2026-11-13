@@ -19,7 +19,8 @@
     "ai:check": "tsx scripts/ai-check.ts",
     "ai:smoke": "tsx scripts/ai-smoke.ts",
     "test:cross": "vitest run tests/shared tests/cross-module",
-    "test:bias": "CASEVEX_BIAS_EVAL=1 node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run tests/cross-module/fairness.test.ts"
+    "test:bias": "CASEVEX_BIAS_EVAL=1 node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run tests/cross-module/fairness.test.ts",
+    "test:db": "vitest run tests/db tests/cross-module/access.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -31,11 +32,13 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^24",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.6",
+    "pg": "^8.23.1",
     "postcss": "^8",
     "prettier": "^3.10.0",
     "tailwindcss": "^3.4.17",
