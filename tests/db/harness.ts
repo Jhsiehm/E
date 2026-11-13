@@ -45,6 +45,11 @@ export interface TestDb {
     fn: (c: pg.PoolClient) => Promise<T>,
     extraClaims?: Record<string, unknown>,
   ): Promise<T>;
+  /** Like as(), but commits, for tests that span several people. */
+  commitAs<T>(
+    actor: ActorKey,
+    fn: (c: pg.PoolClient) => Promise<T>,
+  ): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -69,28 +74,9 @@ export async function createTestDb(): Promise<TestDb> {
   return {
     pool,
     url: url.toString(),
-    async as(actor, fn, extraClaims = {}) {
-      const a = actors[actor];
-      const c = await pool.connect();
-      try {
-        await c.query("begin");
-        if (a.status === "anonymous") await c.query("set local role anon");
-        else {
-          await c.query("set local role authenticated");
-          await c.query("select set_config('request.jwt.claims', $1, true)", [
-            JSON.stringify({
-              sub: uuidFor(a.id),
-              role: "authenticated",
-              ...extraClaims,
-            }),
-          ]);
-        }
-        return await fn(c);
-      } finally {
-        await c.query("rollback").catch(() => undefined);
-        c.release();
-      }
-    },
+    as: (actor, fn, extraClaims = {}) =>
+      runAs(pool, actor, fn, extraClaims, false),
+    commitAs: (actor, fn) => runAs(pool, actor, fn, {}, true),
     async close() {
       await pool.end();
       const a = new pg.Client({ connectionString: TEST_DB_URL });
@@ -99,6 +85,37 @@ export async function createTestDb(): Promise<TestDb> {
       await a.end();
     },
   };
+}
+
+async function runAs<T>(
+  pool: pg.Pool,
+  actor: ActorKey,
+  fn: (c: pg.PoolClient) => Promise<T>,
+  extraClaims: Record<string, unknown>,
+  commit: boolean,
+): Promise<T> {
+  const a = actors[actor];
+  const c = await pool.connect();
+  try {
+    await c.query("begin");
+    if (a.status === "anonymous") await c.query("set local role anon");
+    else {
+      await c.query("set local role authenticated");
+      await c.query("select set_config('request.jwt.claims', $1, true)", [
+        JSON.stringify({
+          sub: uuidFor(a.id),
+          role: "authenticated",
+          ...extraClaims,
+        }),
+      ]);
+    }
+    const out = await fn(c);
+    if (commit) await c.query("commit");
+    return out;
+  } finally {
+    await c.query("rollback").catch(() => undefined);
+    c.release();
+  }
 }
 
 async function seedTenancy(pool: pg.Pool) {

@@ -152,6 +152,8 @@ export async function handleFixture(req: NextRequest, path: string[]) {
       );
     }
     if (path[0] === "documents") {
+      // The demo stores no files: the upload helper falls back to a form post.
+      if (path[1] === "uploads") return reply({ mode: "form" });
       const doc = s.documents.find((d) => d.id === path[1]);
       if (path[1] && !doc) return reply({ error: "Document not found" }, 404);
       if (method === "DELETE") {

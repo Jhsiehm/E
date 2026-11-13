@@ -23,6 +23,9 @@ export type Doc = {
   ownerInitials: string;
   modifiedAt: string;
   status: string;
+  /** Live mode: how far the worker has read the file (pending ... ready). */
+  processing?: string;
+  processingError?: string | null;
 };
 export type Deadline = {
   id: string;

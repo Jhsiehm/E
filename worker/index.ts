@@ -6,10 +6,16 @@
  *   CASEVEX_WORKER_DATABASE_URL  Postgres URL for a login role that is a
  *                                member of casevex_worker (required)
  *   CASEVEX_WORKER_POLL_MS       idle wait between polls (default 2000)
+ *   CASEVEX_WORKER_S3_ENDPOINT, CASEVEX_WORKER_S3_REGION,
+ *   CASEVEX_WORKER_S3_KEY_ID, CASEVEX_WORKER_S3_SECRET
+ *                                Supabase Storage S3 access key: enables
+ *                                document jobs (reading uploads, removing
+ *                                deleted files). Storage only, no database.
  */
 import { hostname } from "node:os";
 import pg from "pg";
-import { HANDLERS } from "./handlers";
+import { S3Files, s3FromEnv } from "./files";
+import { buildHandlers } from "./handlers";
 import { runOnce } from "./run";
 import { PgJobStore } from "./store";
 
@@ -22,6 +28,10 @@ const pollMs = Number(process.env.CASEVEX_WORKER_POLL_MS) || 2000;
 const workerId = `${hostname()}:${process.pid}`;
 const pool = new pg.Pool({ connectionString: url, max: 5 });
 const store = new PgJobStore(pool);
+const s3 = s3FromEnv();
+const HANDLERS = buildHandlers(
+  s3 ? { pool, files: new S3Files(s3) } : undefined,
+);
 let stopping = false;
 
 const log = (msg: string, fields: Record<string, unknown> = {}) =>

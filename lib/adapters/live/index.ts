@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { liveBootstrap } from "./bootstrap";
 import { liveContext } from "./context";
+import { routeDocuments } from "./document-routes";
 import {
   createMatter,
   getMatter,
@@ -26,7 +27,7 @@ export async function handleLive(req: NextRequest, path: string[]) {
   const [root, id, sub] = path;
 
   if (root === "bootstrap" && method === "GET") return liveBootstrap(ctx);
-  if (root !== "matters") return notBuilt();
+  if (root !== "matters" && root !== "documents") return notBuilt();
 
   const body =
     method === "POST" || method === "PATCH"
@@ -34,6 +35,13 @@ export async function handleLive(req: NextRequest, path: string[]) {
       : {};
   if (body === null || typeof body !== "object")
     return fail(400, "bad_request", "Send the details as JSON.");
+  if (root === "documents")
+    return routeDocuments(
+      ctx,
+      req,
+      path.slice(1),
+      body as Record<string, unknown>,
+    );
 
   if (!id) {
     if (method === "GET") return listMatters(ctx, req.nextUrl.searchParams);
