@@ -4,11 +4,16 @@
 -- the anon/authenticated roles, auth.uid() from the request's JWT claims,
 -- and default grants of ALL on public tables (so a missing REVOKE in a
 -- migration shows up here as a failing test, as it would in production).
+-- Roles are cluster-wide; tolerate another test database creating them first.
 do $$
+declare r text;
 begin
-  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+  foreach r in array array['anon', 'authenticated', 'service_role'] loop
+    begin
+      execute format('create role %I nologin%s', r, case when r = 'service_role' then ' bypassrls' else '' end);
+    exception when duplicate_object or unique_violation then null;
+    end;
+  end loop;
 end $$;
 
 create schema auth;
