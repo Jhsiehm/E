@@ -101,7 +101,7 @@ export interface AgentsAdapter {
 }
 
 export const THREADS = {
-  auth: "Supabase sign-in and onboarding",
+  auth: "Matters database and access rules (bedrock 1)",
   sources: "Legal data retrieval",
   routing: "AI model routing",
   agents: "Specialized legal agents",
@@ -110,7 +110,10 @@ export const THREADS = {
 // ---- Wiring (update as branches land) -------------------------------------
 
 export async function authAdapter(): Promise<AuthAdapter | null> {
-  return null; // waiting for the P1 auth/RLS branch
+  // Bedrock 1: RLS on a real Postgres. Needs CASEVEX_TEST_DATABASE_URL.
+  if (!process.env.CASEVEX_TEST_DATABASE_URL) return null;
+  const { dbAuthAdapter } = await import("../db/auth-adapter");
+  return dbAuthAdapter();
 }
 
 export { citationAdapter } from "./citation-adapter";

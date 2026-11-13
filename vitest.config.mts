@@ -11,6 +11,7 @@ export default defineConfig({
       "tests/contract/**/*.test.ts",
       "tests/shared/**/*.test.ts",
       "tests/cross-module/**/*.test.ts",
+      "tests/db/**/*.test.ts",
     ],
     environment: "node",
   },
