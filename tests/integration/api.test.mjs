@@ -11,8 +11,10 @@ before(async () => {
   base = server.url;
 });
 after(() => server?.stop());
-function client() {
+/** A demo session; these tests use the sample cases, so they opt in. */
+function client(samples = true) {
   const jar = new Map([demoCookie().split(/=(.*)/s).slice(0, 2)]);
+  if (samples) jar.set("casevex-samples", "on");
   const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
   return async (path, method = "GET", body) => {
     const res = await fetch(base + "/api/" + path, {
@@ -147,4 +149,10 @@ test("pages send signed-out visitors to sign-in", async () => {
   const res = await fetch(base + "/matters", { redirect: "manual" });
   assert.equal(res.status, 307);
   assert.match(res.headers.get("location"), /\/sign-in\?next=%2Fmatters$/);
+});
+
+test("a new session without the sample opt-in starts empty", async () => {
+  const data = (await client(false)("bootstrap")).data;
+  assert.equal(data.matters.length, 0);
+  assert.equal(data.samples, "off");
 });
