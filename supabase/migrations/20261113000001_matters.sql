@@ -5,7 +5,7 @@
 --   its firm AND on that matter's access list. Firm owners and admins are not
 --   an exception: membership never bypasses the matter list.
 -- * Role decides what they can do once in: owner/admin/attorney/paralegal
---   write, owner/admin/attorney delete and export, owner/admin share.
+--   write; owner/admin/attorney delete, export, confirm deadlines and share.
 -- * Every row carries workspace_id; composite foreign keys stop a child row
 --   from pointing at another firm's matter. workspace_id never changes.
 -- * private.can() is the single place these rules live. RLS policies call
@@ -106,7 +106,7 @@ begin
     when 'delete' then r in ('owner', 'admin', 'attorney')
     when 'export' then r in ('owner', 'admin', 'attorney')
     when 'confirm' then r in ('owner', 'admin', 'attorney')
-    when 'share' then r in ('owner', 'admin')
+    when 'share' then r in ('owner', 'admin', 'attorney')
     else false
   end;
 end;

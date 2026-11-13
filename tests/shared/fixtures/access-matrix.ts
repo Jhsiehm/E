@@ -22,6 +22,9 @@ const WRITE_ROLES = new Set(["owner", "admin", "attorney", "paralegal"]);
 const DELETE_ROLES = new Set(["owner", "admin", "attorney"]);
 const EXPORT_ROLES = new Set(["owner", "admin", "attorney"]);
 const INVITE_ROLES = new Set(["owner", "admin"]);
+// Joshua, 2026-11-13: attorneys on a matter may share it (e.g. add their
+// paralegal). Firm-level invites stay owner/admin.
+const MATTER_SHARE_ROLES = new Set(["owner", "admin", "attorney"]);
 
 export function expectedDecision(
   actor: Actor,
@@ -55,7 +58,7 @@ export function expectedDecision(
     case "export":
       return EXPORT_ROLES.has(actor.role) ? "allow" : "deny";
     case "invite":
-      return INVITE_ROLES.has(actor.role) ? "allow" : "deny";
+      return MATTER_SHARE_ROLES.has(actor.role) ? "allow" : "deny";
   }
 }
 
