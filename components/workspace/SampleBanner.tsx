@@ -1,5 +1,6 @@
 "use client";
 import { useWorkspace } from "@/components/workspace/context";
+import { startTour } from "@/components/workspace/tour/Tour";
 
 /**
  * Shown on every screen while the practice sample cases are loaded, so no
@@ -14,16 +15,21 @@ export default function SampleBanner() {
         <b>You are exploring sample cases.</b> They are made up for practice.
         They are not real clients, cases or court rulings.
       </span>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={async () => {
-          if (await mutate("samples", {}, "DELETE"))
-            notify("Sample cases removed. Your own matters were kept.");
-        }}
-      >
-        Remove sample cases
-      </button>
+      <span className="sample-banner-actions">
+        <button type="button" onClick={startTour}>
+          Take the tour
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            if (await mutate("samples", {}, "DELETE"))
+              notify("Sample cases removed. Your own matters were kept.");
+          }}
+        >
+          Remove sample cases
+        </button>
+      </span>
     </div>
   );
 }

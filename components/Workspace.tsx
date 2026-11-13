@@ -23,6 +23,7 @@ import SettingsPage from "./workspace/pages/SettingsPage";
 import NotFoundPage from "./workspace/pages/NotFoundPage";
 import NewMatterModal from "./workspace/modals/NewMatterModal";
 import SampleBanner from "./workspace/SampleBanner";
+import Tour from "./workspace/tour/Tour";
 import UploadModal from "./workspace/modals/UploadModal";
 import EventModal from "./workspace/modals/EventModal";
 import EventDetailModal from "./workspace/modals/EventDetailModal";
@@ -164,6 +165,7 @@ export default function Workspace() {
           )}
           {content}
         </main>
+        <Tour />
         {toast && (
           <div className="toast" role="status">
             {toast}
