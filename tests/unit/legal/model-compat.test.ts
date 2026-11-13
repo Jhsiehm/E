@@ -1,45 +1,37 @@
-/**
- * Type-level check that a function shaped like `complete` from @/lib/ai
- * (PR #3: optional provider, RunBudget | number budget, extra deps param,
- * usage field) is assignable to the legal pipeline's Complete slot.
- * Replace the local copy with the real import once lib/ai is on main.
- */
+/** The legal model slot takes lib/ai's complete() with no adapter. */
 import { describe, expect, it } from "vitest";
-import type { Complete } from "@/lib/legal/model";
-
-class RunBudget {
-  constructor(readonly maxUsd: number) {}
-}
-interface AiCompleteRequest<T> {
-  task:
-    | "research.plan"
-    | "research.draft"
-    | "research.verify_support"
-    | "research.rerank"
-    | "research.route";
-  messages: { role: "system" | "user" | "assistant"; content: string }[];
-  responseSchema?: { parse: (value: unknown) => T } | ((value: unknown) => T);
-  budgetUsd?: RunBudget | number;
-  promptVersion?: string;
-  signal?: AbortSignal;
-  onUsage?: (usage: unknown) => void | Promise<void>;
-}
-interface AiCompleteResult<T> {
-  output: T;
-  modelId: string;
-  provider?: string;
-  costUsd: number;
-  usage: { costUsd: number };
-}
-type AiComplete = <T = string>(
-  req: AiCompleteRequest<T>,
-  deps?: object,
-) => Promise<AiCompleteResult<T>>;
+import { complete } from "@/lib/ai";
+import { AiError, type Complete } from "@/lib/legal/model";
+import { buildRegistry } from "@/lib/legal/registry";
+import { answerQuestion } from "@/lib/legal/research";
+import { retrieve } from "@/lib/legal/retrieve";
 
 describe("model slot", () => {
   it("accepts lib/ai's complete() without an adapter", () => {
-    const aiComplete = null as unknown as AiComplete;
-    const slot: Complete = aiComplete; // fails tsc if the shapes drift
-    expect(slot).toBeNull();
+    const slot: Complete = complete; // fails tsc if the shapes drift
+    expect(typeof slot).toBe("function");
+  });
+
+  it("falls back to an extractive answer when no AI key is configured", async () => {
+    const question =
+      "What must a plaintiff allege for a consumer protection claim?";
+    const r = await retrieve(buildRegistry({ NODE_ENV: "test" }), { question });
+    const notConfigured: Complete = async () => {
+      throw new AiError("not_configured", "No AI key is set.");
+    };
+    const a = await answerQuestion(question, r, { complete: notConfigured });
+    expect(a.mode).toBe("extractive");
+    expect(a.answer.limitations[0]).toMatch(/No AI model is configured/);
+  });
+
+  it("surfaces other AI failures instead of hiding them", async () => {
+    const question = "consumer protection claim";
+    const r = await retrieve(buildRegistry({ NODE_ENV: "test" }), { question });
+    const broken: Complete = async () => {
+      throw new AiError("budget_exceeded", "over budget");
+    };
+    await expect(
+      answerQuestion(question, r, { complete: broken }),
+    ).rejects.toMatchObject({ code: "budget_exceeded" });
   });
 });

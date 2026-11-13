@@ -7,7 +7,13 @@
  * text, and runs an independent support check. With no model configured the
  * answer is extractive: quoted passages, no legal conclusions.
  */
-import type { Complete, CompleteResult, LegalModelTask } from "./model";
+import {
+  AiError,
+  RunBudget,
+  type Complete,
+  type CompleteResult,
+  type LegalModelTask,
+} from "./model";
 import type { Evidence, RetrievalResult } from "./retrieve";
 import { checkQuote, type QuoteCheck } from "./verify";
 
@@ -198,7 +204,8 @@ Return JSON: {"verdicts": [{"claim": "C1", "status": string, "reason": string}]}
 export interface ResearchOptions {
   complete?: Complete;
   /** Per-call USD ceiling. */
-  budgetUsd?: number;
+  /** Shared run budget (e.g. RunBudget.fromAgentProfile) or a USD ceiling for the whole run. */
+  budgetUsd?: RunBudget | number;
   signal?: AbortSignal;
   /** Skip the separate support-check call (e.g. tight budget). */
   skipSupportCheck?: boolean;
@@ -309,7 +316,11 @@ export async function answerQuestion(
   if (!opts.complete || retrieval.evidence.length === 0)
     return extractive(question, retrieval);
   const complete = opts.complete;
-  const budgetUsd = opts.budgetUsd ?? 1.5;
+  // One budget across the draft and the support check.
+  const budgetUsd =
+    opts.budgetUsd instanceof RunBudget
+      ? opts.budgetUsd
+      : new RunBudget(opts.budgetUsd ?? 1.5);
 
   const labels = new Map<string, string>();
   const byLabel = new Map<string, Evidence>();
@@ -318,20 +329,32 @@ export async function answerQuestion(
     byLabel.set(`S${i + 1}`, e);
   });
 
-  const draftRes = await complete<Draft>({
-    task: "research.draft",
-    promptVersion: PROMPT_VERSION,
-    budgetUsd,
-    signal: opts.signal,
-    responseSchema: { parse: parseDraft },
-    messages: [
-      { role: "system", content: DRAFT_SYSTEM },
-      {
-        role: "user",
-        content: `Question: ${fence(question)}\n\nSources:\n${sourcesBlock(retrieval.evidence, labels)}`,
-      },
-    ],
-  });
+  let draftRes: CompleteResult<Draft>;
+  try {
+    draftRes = await complete<Draft>({
+      task: "research.draft",
+      promptVersion: PROMPT_VERSION,
+      budgetUsd,
+      signal: opts.signal,
+      responseSchema: { parse: parseDraft },
+      messages: [
+        { role: "system", content: DRAFT_SYSTEM },
+        {
+          role: "user",
+          content: `Question: ${fence(question)}\n\nSources:\n${sourcesBlock(retrieval.evidence, labels)}`,
+        },
+      ],
+    });
+  } catch (err) {
+    // No AI key configured: still answer, extractively, and say why.
+    if (err instanceof AiError && err.code === "not_configured") {
+      const r = extractive(question, retrieval);
+      r.answer.limitations[0] =
+        "No AI model is configured (no OpenRouter/Anthropic key); this is an extractive result.";
+      return r;
+    }
+    throw err;
+  }
   const modelRuns = [run("research.draft", PROMPT_VERSION, draftRes)];
   const draft = draftRes.output;
   const rejected = new Set<string>();
