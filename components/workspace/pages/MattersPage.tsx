@@ -3,7 +3,7 @@ import Link from "next/link";
 import Icon from "@/components/Icon";
 import { areas, date, label } from "@/components/workspace/format";
 import { Chip, Card, Empty, Filter, Search } from "@/components/workspace/ui";
-import { Header } from "@/components/workspace/shared";
+import { Header, SampleTag } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
 
 /** Matters list with search and filters. */
@@ -64,6 +64,7 @@ export default function MattersPage() {
                       <Icon name="matters" />
                       <span>
                         {m.name}
+                        {m.sample && <SampleTag />}
                         <small>
                           {m.docket} | {m.court}
                         </small>

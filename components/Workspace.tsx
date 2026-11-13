@@ -23,6 +23,7 @@ import CalendarPage from "./workspace/pages/CalendarPage";
 import SettingsPage from "./workspace/pages/SettingsPage";
 import NotFoundPage from "./workspace/pages/NotFoundPage";
 import NewMatterModal from "./workspace/modals/NewMatterModal";
+import SampleBanner from "./workspace/SampleBanner";
 import UploadModal from "./workspace/modals/UploadModal";
 import EventModal from "./workspace/modals/EventModal";
 import EventDetailModal from "./workspace/modals/EventDetailModal";
@@ -167,6 +168,7 @@ export default function Workspace() {
           </Link>
         </aside>
         <main id="main" tabIndex={-1}>
+          <SampleBanner />
           {error && (
             <div role="alert" className="error-banner">
               {error}

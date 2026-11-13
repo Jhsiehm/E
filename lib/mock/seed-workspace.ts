@@ -152,5 +152,5 @@ export const seedDocuments = (): Doc[] =>
     type: String(r[5]),
     status: String(r[6]),
     ownerInitials: "JW",
-    modifiedAt: `2026-11-${11 - i}`,
+    modifiedAt: `2026-11-${String(11 - i).padStart(2, "0")}`,
   }));

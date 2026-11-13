@@ -10,7 +10,8 @@ async function handle(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  if (resolveDataMode() !== "fixture") return handleLive();
+  if (resolveDataMode() !== "fixture")
+    return handleLive(req, (await params).path);
   return handleFixture(req, (await params).path);
 }
 

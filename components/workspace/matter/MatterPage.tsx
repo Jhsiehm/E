@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
 import { label } from "@/components/workspace/format";
 import { Chip } from "@/components/workspace/ui";
+import { SampleTag } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
 import { useMatterScope } from "@/components/workspace/matter/useMatterScope";
 
@@ -37,6 +38,7 @@ export default function MatterPage() {
           <p className="subtitle">
             {matter.court} <span>|</span> {matter.type} <span>|</span>{" "}
             <Chip tone="olive">{label(matter.status)}</Chip>
+            {matter.sample && <SampleTag />}
           </p>
         </div>
         <div className="actions">

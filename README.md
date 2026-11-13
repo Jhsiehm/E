@@ -40,6 +40,16 @@ npm run test:e2e      # Playwright, 5 viewports; starts `next start` in fixture 
 `npm test` runs unit + integration. CI (`.github/workflows/ci.yml`) runs all of
 the above on every pull request.
 
+Database access rules (`supabase/migrations`) are tested on a real Postgres:
+
+```sh
+# any Postgres 15+ superuser URL; each run creates and drops its own database
+CASEVEX_TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run test:db
+# e.g. docker run --rm -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
+```
+
+Files are capped at 300 lines of code (ESLint `max-lines`, ADR 0009).
+
 ## Try the flows
 
 - Dashboard → ask a question → Anderson's agent chat → simulated source-review animation → answer with source links.

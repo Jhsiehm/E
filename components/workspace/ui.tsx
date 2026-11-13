@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
 import { disclaimer } from "@/lib/mock/data";
 import { label } from "@/components/workspace/format";
+import { WorkspaceContext } from "@/components/workspace/context";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 /* Presentational primitives: chips, cards, empty states, dialogs, URL-bound filters. */
@@ -40,9 +41,12 @@ export function Card({
   );
 }
 export function Foot() {
+  const showingSamples =
+    useContext(WorkspaceContext)?.data.matters.some((m) => m.sample) ?? false;
   return (
     <p className="disclaimer">
-      {disclaimer} <span>Sample data shown.</span>
+      {disclaimer}
+      {showingSamples && <span> Sample cases shown.</span>}
     </p>
   );
 }

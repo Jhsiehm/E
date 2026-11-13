@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getState } from "@/lib/mock/store";
 import { DATA_MODE_HEADER } from "@/lib/runtime/data-mode";
+import { workspaceAction } from "./samples";
 import {
   sampleAnswer,
   sources,
@@ -14,14 +15,25 @@ import {
  * carries `X-Casevex-Data-Mode: fixture`. Moved unchanged from the former
  * app/api/[...path]/route.ts.
  */
+const SAMPLES_COOKIE = "casevex-samples";
+
 export async function handleFixture(req: NextRequest, path: string[]) {
   const id = req.cookies.get("casevex-demo")?.value || crypto.randomUUID();
-  const s = getState(id);
+  // Remembered in a cookie so a fresh server instance rebuilds the same kind
+  // of workspace: empty, or the practice sample cases.
+  const s = getState(id, req.cookies.get(SAMPLES_COOKIE)?.value === "on");
   await new Promise((r) => setTimeout(r, 300));
   const reply = (data: unknown, status = 200) => {
     const res = NextResponse.json(data, { status });
     res.headers.set(DATA_MODE_HEADER, "fixture");
     res.cookies.set("casevex-demo", id, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 86400,
+      secure: req.nextUrl.protocol === "https:",
+    });
+    res.cookies.set(SAMPLES_COOKIE, s.samples ?? "off", {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
@@ -54,11 +66,7 @@ export async function handleFixture(req: NextRequest, path: string[]) {
       }
       return reply(s.me);
     }
-    if (path[0] === "reset" && method === "POST") {
-      const { seed } = await import("@/lib/mock/data");
-      Object.assign(s, seed());
-      return reply(s);
-    }
+    if (workspaceAction(s, path[0], method)) return reply(s);
     if (path[0] === "matters") {
       if (path[1]) {
         const m = s.matters.find((m) => m.id === path[1]);
@@ -152,6 +160,8 @@ export async function handleFixture(req: NextRequest, path: string[]) {
       );
     }
     if (path[0] === "documents") {
+      // The demo stores no files: the upload helper falls back to a form post.
+      if (path[1] === "uploads") return reply({ mode: "form" });
       const doc = s.documents.find((d) => d.id === path[1]);
       if (path[1] && !doc) return reply({ error: "Document not found" }, 404);
       if (method === "DELETE") {
