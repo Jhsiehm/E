@@ -57,6 +57,9 @@ export function fromDbError(err: { code?: string; message?: string } | null) {
   if (code === "42501")
     return fail(403, "forbidden", "You do not have access to do that.");
   if (code === "PGRST116") return fail(404, "not_found", "Not found.");
+  // Raised by our own database functions with a message meant for people.
+  if (code === "22023" && err?.message)
+    return fail(422, "validation_failed", err.message.slice(0, 200));
   if (code.startsWith("23") || code.startsWith("22"))
     return fail(422, "validation_failed", "Some details are not valid.");
   if (code === "28000")

@@ -25,9 +25,24 @@ Use the Supabase connection pooler URL with that user as
 `CASEVEX_WORKER_DATABASE_URL`. Never give the worker the `postgres` or
 `service_role` credentials.
 
+## File storage access (document jobs)
+
+To read uploads and remove deleted files, the worker needs a Supabase
+Storage S3 access key (Supabase dashboard: Storage, S3 access keys, "New
+access key"). It reaches file storage only, never the database. Set:
+
+```sh
+CASEVEX_WORKER_S3_ENDPOINT=https://<project-ref>.storage.supabase.co/storage/v1/s3
+CASEVEX_WORKER_S3_REGION=<the region shown next to the endpoint>
+CASEVEX_WORKER_S3_KEY_ID=...
+CASEVEX_WORKER_S3_SECRET=...
+```
+
+Without them the worker still runs, but skips `document.*` jobs.
+
 ## Adding a job kind
 
-1. Add a handler in `handlers.ts`. It must be safe to run twice.
+1. Add a handler in `handlers.ts` (or `buildHandlers` if it needs storage). It must be safe to run twice.
 2. Queue it from the app with `rpc("enqueue_job", { ws, job_kind, job_payload, matter, idem_key })`.
    Payloads carry ids only, never document text.
 3. Throw `JobError("plain reason", retryable)` for failures people should read.
