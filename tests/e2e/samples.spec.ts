@@ -49,6 +49,11 @@ test("a new account starts empty; sample cases are an optional, labelled tutoria
   ).toContainText("check it yourself");
   await page.getByRole("dialog").getByRole("button", { name: "Back" }).click();
   await expect(page).toHaveURL(/\/matters\/anderson\/documents$/);
+  // The tab's count matches the files actually listed.
+  const rows = await page.locator("main tbody tr").count();
+  await expect(
+    page.getByRole("link", { name: `Documents (${rows})` }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Skip tour" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
