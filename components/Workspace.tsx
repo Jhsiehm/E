@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { publishDueThisWeek } from "./IntroSplash";
 import Icon from "./Icon";
+import Logo, { LogoMark } from "./Logo";
 import { useAccount } from "./account/AccountProvider";
 import { NAV_HREF, NAV_LABELS } from "@/lib/account/layout";
 import { initials } from "@/lib/account/profile";
@@ -55,14 +57,24 @@ export default function Workspace() {
   const account = useAccount();
   const ws = useWorkspaceController(account.layout.defaultPractice);
   const { data, error, refresh } = ws;
+  const deadlines = data?.deadlines;
+  useEffect(() => {
+    if (!deadlines) return;
+    const now = Date.now();
+    const week = now + 7 * 864e5;
+    publishDueThisWeek(
+      deadlines.filter((d) => {
+        const t = Date.parse(d.dueAt);
+        return t >= now - 864e5 && t <= week;
+      }).length,
+    );
+  }, [deadlines]);
   if (!data)
     return (
       <div className="boot">
-        <div className="logo-grid">
-          {Array.from({ length: 16 }, (_, i) => (
-            <i key={i} />
-          ))}
-        </div>
+        <span className="logo-paper">
+          <LogoMark loading={!error} />
+        </span>
         <h1>Casevex</h1>
         {error ? (
           <>
@@ -90,13 +102,8 @@ export default function Workspace() {
           Skip to content
         </a>
         <aside className="sidebar">
-          <Link href="/" className="brand">
-            <span className="logo-grid">
-              {Array.from({ length: 16 }, (_, i) => (
-                <i key={i} />
-              ))}
-            </span>
-            Casevex
+          <Link href="/" className="brand logo-link">
+            <Logo />
           </Link>
           <nav className="main-nav" aria-label="Primary">
             {account.layout.nav
