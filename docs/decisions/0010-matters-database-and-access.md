@@ -15,8 +15,8 @@ Lawyers need ethical walls: being in the firm is not enough to see a matter.
   the rules; every row-level-security policy calls it. Firm-level actions use
   `private.can_workspace`. Rules: active firm member AND on the matter's list;
   owners and admins are not an exception. Role then decides write (owner,
-  admin, attorney, paralegal), delete/export (owner, admin, attorney) and
-  share (owner, admin).
+  admin, attorney, paralegal), and delete, export, confirm a deadline and
+  share (owner, admin, attorney).
 - Matters are created only through `create_matter()`, which puts the creator
   on the list. People are added or removed only through
   `add_matter_member()` / `remove_matter_member()`, same firm only, and a
@@ -30,7 +30,8 @@ Lawyers need ethical walls: being in the firm is not enough to see a matter.
   access matrix (both directions) plus targeted cases. CI runs them in a
   Postgres service container.
 
-## Open question
-The spec lets only owners and admins share a matter. An attorney who opens
-a matter therefore cannot add their own paralegal. Changing this is one line
-in `private.can`; it needs a product decision.
+## Sharing
+The spec let only owners and admins share a matter, so an attorney who
+opened a matter could not add their own paralegal, and the owner could not
+either unless they were on it. On 2026-11-13 Joshua decided attorneys on a
+matter may share it. Inviting people into the firm stays owner/admin.
