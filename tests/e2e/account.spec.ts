@@ -52,6 +52,11 @@ test.describe("signed out", () => {
 
     await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("main h1").first()).toHaveText(/, Ana\.$/);
+    // A new account starts with no cases; sample cases are opt-in.
+    await expect(
+      page.getByRole("heading", { name: "Your workspace is ready" }),
+    ).toBeVisible();
+    await expect(page.locator(".sample-banner")).toHaveCount(0);
     await expect(
       page.getByText(/Consumer and class action · TCPA, BIPA · S\.D\.N\.Y\./),
     ).toBeAttached();

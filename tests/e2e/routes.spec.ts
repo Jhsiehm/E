@@ -31,7 +31,7 @@ test("unknown routes show the not-found screen", async ({ page }) => {
 
 test("sample data is labelled as such", async ({ page }) => {
   await openApp(page, "/");
-  await expect(page.getByText("Sample data shown.").first()).toBeVisible();
+  await expect(page.getByText("Sample cases shown.").first()).toBeVisible();
   const res = await page.request.get("/api/bootstrap");
   expect(res.headers()["x-casevex-data-mode"]).toBe("fixture");
 });

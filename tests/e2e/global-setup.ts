@@ -36,6 +36,18 @@ export default function globalSetup() {
           secure: false,
           sameSite: "Lax",
         },
+        // Most specs exercise the practice sample cases; a new account
+        // starts empty (see samples.spec.ts).
+        {
+          name: "casevex-samples",
+          value: "on",
+          domain: "127.0.0.1",
+          path: "/",
+          expires: -1,
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax",
+        },
       ],
       origins: [],
     }),

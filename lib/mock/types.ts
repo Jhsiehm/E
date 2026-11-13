@@ -12,6 +12,8 @@ export type Matter = {
   assignedAgentId: string;
   documentCount: number;
   updatedAt: string;
+  /** Made-up practice case from the demo tutorial, not a real client. */
+  sample?: boolean;
 };
 export type Doc = {
   id: string;
@@ -95,4 +97,9 @@ export type State = {
   precedents: Precedent[];
   chats: Record<string, Message[]>;
   strategies: Record<string, string>;
+  /**
+   * Demo only: whether the practice sample cases are loaded. Absent in live
+   * mode, where sample cases are never offered.
+   */
+  samples?: "on" | "off";
 };

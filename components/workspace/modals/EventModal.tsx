@@ -17,7 +17,10 @@ export default function EventModal() {
       </label>
       <label>
         Matter
-        <select name="matterId" defaultValue={matter?.id || "anderson"}>
+        <select
+          name="matterId"
+          defaultValue={matter?.id || data.matters[0]?.id}
+        >
           {data.matters.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}

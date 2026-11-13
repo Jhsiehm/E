@@ -59,7 +59,9 @@ export default function UploadModal() {
         Matter
         <select
           name="matterId"
-          defaultValue={matter?.id || params.get("matterId") || "anderson"}
+          defaultValue={
+            matter?.id || params.get("matterId") || data.matters[0]?.id
+          }
         >
           {data.matters.map((m) => (
             <option key={m.id} value={m.id}>
