@@ -26,10 +26,31 @@ async function state(p: Promise<unknown>): Promise<string> {
   }
 }
 
+// Switches who is asking, inside the same transaction, so rows one person
+// wrote (and that roll back afterwards) can be probed by another.
+const actAs = (c: pg.PoolClient, who: keyof typeof actors | string) =>
+  c.query("select set_config('request.jwt.claims', $1, true)", [
+    JSON.stringify({
+      sub: who in actors ? id(who as keyof typeof actors) : who,
+      role: "authenticated",
+    }),
+  ]);
+
+const ADMIN_A = uuidFor("qa_admin_a");
+
 describe.skipIf(!TEST_DB_URL)("QA adversarial: matters database", () => {
   let db: TestDb;
   beforeAll(async () => {
     db = await createTestDb();
+    // The shared fixtures have no firm admin; add one for firm-level rules.
+    await db.pool.query(
+      "insert into auth.users (id, email) values ($1, 'admin-a@example.invalid')",
+      [ADMIN_A],
+    );
+    await db.pool.query(
+      "insert into public.memberships (workspace_id, user_id, role, status) values ($1, $2, 'admin', 'active')",
+      [A, ADMIN_A],
+    );
   });
   afterAll(async () => db?.close());
 
@@ -173,5 +194,99 @@ describe.skipIf(!TEST_DB_URL)("QA adversarial: matters database", () => {
       await tryShare("00000000-0000-4000-8000-000000000000"),
     ];
     expect(r[0]).toBe(r[1]);
+  });
+
+  it("a deadline cannot be added in someone else's name", async () => {
+    const r = await db.as("paralegalA2", (c) =>
+      state(addDeadline(c, OPEN, null, id("attorneyA1"))),
+    );
+    expect(r).not.toBe("ok");
+  });
+
+  it("walled-off people see no strategy or deadlines that really exist", async () => {
+    // Write real rows on M1 first, so a leak would show up as a count.
+    const counts = await db.as("attorneyA1", async (c) => {
+      await c.query(
+        "insert into public.matter_strategy (matter_id, workspace_id, body) values ($1, $2, 'Settle early')",
+        [M1, A],
+      );
+      await addDeadline(c, M1, null, id("attorneyA1"));
+      const mine = await c.query(
+        "select (select count(*) from public.matter_strategy where matter_id = $1)::int as s, (select count(*) from public.matter_deadlines where matter_id = $1)::int as d",
+        [M1],
+      );
+      await actAs(c, "paralegalA2");
+      const theirs = await c.query(
+        "select (select count(*) from public.matter_strategy where matter_id = $1)::int as s, (select count(*) from public.matter_deadlines where matter_id = $1)::int as d",
+        [M1],
+      );
+      return { mine: mine.rows[0], theirs: theirs.rows[0] };
+    });
+    expect(counts.mine).toEqual({ s: 1, d: 1 });
+    expect(counts.theirs).toEqual({ s: 0, d: 0 });
+  });
+
+  it("removed staff cannot be put back on a matter", async () => {
+    const r = await db.as("ownerA", (c) =>
+      state(
+        c.query("select public.add_matter_member($1, $2)", [
+          OPEN,
+          id("revokedA4"),
+        ]),
+      ),
+    );
+    expect(r).toBe("23503");
+  });
+
+  it("only the owner renames the firm, not an admin or attorney", async () => {
+    const rename = (who: keyof typeof actors | string) =>
+      db.pool.connect().then(async (c) => {
+        try {
+          await c.query("begin");
+          await c.query("set local role authenticated");
+          await actAs(c, who);
+          const q = await c.query(
+            "update public.workspaces set name = 'Renamed' where id = $1",
+            [A],
+          );
+          return q.rowCount;
+        } finally {
+          await c.query("rollback");
+          c.release();
+        }
+      });
+    expect(await rename("ownerA")).toBe(1);
+    expect(await rename(ADMIN_A)).toBe(0);
+    expect(await rename("attorneyA1")).toBe(0);
+  });
+
+  it("a firm-level job is seen and cancelled only by the person who started it", async () => {
+    const r = await db.as("attorneyA1", async (c) => {
+      const { rows } = await c.query(
+        "select public.enqueue_job($1, 'system.ping', '{}', null, null) as id",
+        [A],
+      );
+      const job = rows[0].id as string;
+      await actAs(c, "paralegalA2");
+      const seen = (
+        await c.query("select 1 from public.jobs where id = $1", [job])
+      ).rowCount;
+      const cancelled = (
+        await c.query("select public.cancel_job($1) as ok", [job])
+      ).rows[0].ok;
+      await actAs(c, "attorneyA1");
+      const own = (
+        await c.query("select 1 from public.jobs where id = $1", [job])
+      ).rowCount;
+      return { seen, cancelled, own };
+    });
+    expect(r).toEqual({ seen: 0, cancelled: false, own: 1 });
+  });
+
+  it("people cannot read job payloads (only the worker can)", async () => {
+    const r = await db.as("attorneyA1", (c) =>
+      state(c.query("select payload from public.jobs limit 1")),
+    );
+    expect(r).toBe("42501");
   });
 });
