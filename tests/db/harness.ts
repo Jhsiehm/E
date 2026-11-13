@@ -37,6 +37,8 @@ function migrationFiles(): string[] {
 
 export interface TestDb {
   pool: pg.Pool;
+  /** URL of the throwaway database, for extra connections (e.g. as the worker). */
+  url: string;
   /** Runs fn inside a transaction as the actor (RLS applies), then rolls back. */
   as<T>(
     actor: ActorKey,
@@ -66,6 +68,7 @@ export async function createTestDb(): Promise<TestDb> {
 
   return {
     pool,
+    url: url.toString(),
     async as(actor, fn, extraClaims = {}) {
       const a = actors[actor];
       const c = await pool.connect();

@@ -1,0 +1,39 @@
+# Casevex worker
+
+Runs background jobs (`public.jobs`) outside the website, so slow work is
+not cut off by Vercel's request time limit. One container; scale by running
+more copies (claims are exclusive, so two copies never run the same job).
+
+## Run locally
+
+```sh
+CASEVEX_WORKER_DATABASE_URL=postgres://worker_login:...@localhost:5432/postgres npm run worker
+```
+
+## Database login for the worker
+
+The migration creates a `casevex_worker` role that can only call the
+`worker.*` functions. It cannot read matters, documents or any other table.
+Create a login for it once, in the Supabase SQL editor (choose a long random
+password and store it only in the worker host's secret store):
+
+```sql
+create role casevex_worker_login login password '<generated>' in role casevex_worker;
+```
+
+Use the Supabase connection pooler URL with that user as
+`CASEVEX_WORKER_DATABASE_URL`. Never give the worker the `postgres` or
+`service_role` credentials.
+
+## Adding a job kind
+
+1. Add a handler in `handlers.ts`. It must be safe to run twice.
+2. Queue it from the app with `rpc("enqueue_job", { ws, job_kind, job_payload, matter, idem_key })`.
+   Payloads carry ids only, never document text.
+3. Throw `JobError("plain reason", retryable)` for failures people should read.
+
+## Deploy
+
+`docker build -f worker/Dockerfile -t casevex-worker .` from the repository
+root. Any container host works; the recommendation is Google Cloud Run with
+min instances 1 (it must keep polling). Hosting is a decision for Joshua.
