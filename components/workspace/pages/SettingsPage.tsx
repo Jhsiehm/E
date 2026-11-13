@@ -9,7 +9,7 @@ import ProfileSettings from "@/components/account/ProfileSettings";
 
 /** Settings sections. */
 export default function SettingsPage() {
-  const { parts, setProfile, notify, mutate } = useWorkspace();
+  const { parts, setProfile, notify, mutate, data } = useWorkspace();
   const account = useAccount();
   const section = parts[1] || "profile";
   return (
@@ -54,7 +54,7 @@ export default function SettingsPage() {
           </h2>
           <p>
             {section === "workspace"
-              ? "A sample workspace for litigation research."
+              ? "Your demo workspace. Sample cases are optional practice data you can add or remove."
               : section === "security"
                 ? "Authentication, matter permissions, and audit logging are planned for the backend."
                 : section === "integrations"
@@ -66,17 +66,40 @@ export default function SettingsPage() {
             See the backend plan in the repository for scope, data contracts,
             and implementation phases.
           </p>
-          {section === "workspace" && (
-            <button
-              onClick={async () => {
-                if (await mutate("reset", {})) {
-                  setProfile(null);
-                  notify("Demo workspace reset.");
-                }
-              }}
-            >
-              Reset demo data
-            </button>
+          {section === "workspace" && data.samples !== undefined && (
+            <div className="actions">
+              {data.samples === "on" ? (
+                <button
+                  onClick={async () => {
+                    if (await mutate("samples", {}, "DELETE"))
+                      notify(
+                        "Sample cases removed. Your own matters were kept.",
+                      );
+                  }}
+                >
+                  Remove sample cases
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    if (await mutate("samples", {}))
+                      notify("Five sample cases added. Remove them any time.");
+                  }}
+                >
+                  Add sample cases for practice
+                </button>
+              )}
+              <button
+                onClick={async () => {
+                  if (await mutate("reset", {})) {
+                    setProfile(null);
+                    notify("Workspace cleared. You are starting fresh.");
+                  }
+                }}
+              >
+                Start over with an empty workspace
+              </button>
+            </div>
           )}
         </Card>
       )}

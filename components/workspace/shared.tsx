@@ -104,6 +104,13 @@ export const Ruling = ({ compact = false }: { compact?: boolean }) => {
   );
 };
 
+/** Marks a made-up practice case wherever it is listed. */
+export const SampleTag = () => (
+  <span className="sample-tag" title="Made-up practice case, not a real client">
+    Sample
+  </span>
+);
+
 export const MatterList = ({ items }: { items: Matter[] }) => {
   const { hasImpact } = useWorkspace();
   return (
@@ -112,7 +119,10 @@ export const MatterList = ({ items }: { items: Matter[] }) => {
         <Link className="list-row" href={"/matters/" + m.id} key={m.id}>
           <Icon name="matters" />
           <span className="grow">
-            <span className="matter-name">{m.name}</span>
+            <span className="matter-name">
+              {m.name}
+              {m.sample && <SampleTag />}
+            </span>
             <small>
               {m.type} | {m.court}
             </small>

@@ -10,6 +10,7 @@ import {
   MatterList,
 } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
+import WelcomeCard from "@/components/workspace/WelcomeCard";
 import { useAccount } from "@/components/account/AccountProvider";
 import {
   CARD_LABELS,
@@ -20,12 +21,38 @@ import type { DashboardCard } from "@/lib/account/profile";
 import { practiceArea } from "@/lib/practice-areas";
 import type { ReactNode } from "react";
 
-const QUICK: Record<QuickAction, [string, string, string]> = {
-  agent: ["Run legal agent", "agents", "/matters/anderson/chat"],
-  precedents: ["Research precedents", "precedents", "/precedents"],
-  documents: ["Analyze documents", "documents", "/documents"],
-  strategy: ["Update case strategy", "edit", "/matters/anderson/strategy"],
+/** Quick links; matter ones open the most recent matter, or the list if none. */
+const QUICK: Record<QuickAction, [string, string, (m?: string) => string]> = {
+  agent: [
+    "Run legal agent",
+    "agents",
+    (m) => (m ? `/matters/${m}/chat` : "/matters"),
+  ],
+  precedents: ["Research precedents", "precedents", () => "/precedents"],
+  documents: ["Analyze documents", "documents", () => "/documents"],
+  strategy: [
+    "Update case strategy",
+    "edit",
+    (m) => (m ? `/matters/${m}/strategy` : "/matters"),
+  ],
 };
+
+/** Recent activity for the practice sample cases (the demo has no event log). */
+const SAMPLE_ACTIVITY = [
+  [
+    "Motion to compel, draft updated",
+    "Anderson v. Meridian Tech · Sample",
+    "4h ago",
+    "/matters/anderson/documents",
+  ],
+  ["New ruling detected", "U.S. v. Nexora Tech · Sample", "2h ago", "/notices"],
+  [
+    "Deposition transcript added",
+    "Ridgeway Holdings LLC · Sample",
+    "1d ago",
+    "/matters/ridgeway/documents",
+  ],
+];
 
 /** Greeting by the hour in the person's own time zone. */
 function greeting(timeZone: string) {
@@ -46,6 +73,7 @@ function greeting(timeZone: string) {
 export default function DashboardPage() {
   const { router, data, question, setQuestion, practice, setPractice, notify } =
     useWorkspace();
+  const first = data.matters[0]?.id;
   const { profile, layout } = useAccount();
   const firstName = (profile.fullName || profile.email).split(/[\s@]/)[0];
   const mine: string[] = profile.practiceAreas.map(
@@ -69,9 +97,11 @@ export default function DashboardPage() {
           if (!question.trim()) return;
           if (practice === "General research")
             notify("Research threads outside a matter are coming soon.");
+          else if (!first)
+            notify("Add a matter first, then ask Casevex about it.");
           else
             router.push(
-              "/matters/anderson/chat?question=" + encodeURIComponent(question),
+              `/matters/${first}/chat?question=` + encodeURIComponent(question),
             );
         }}
       >
@@ -109,6 +139,7 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+      <WelcomeCard />
       {data.notices.some((n) => n.kind === "ruling" && !n.read) && <Ruling />}
       <div className="page-body dashboard-grid">
         {layout.cards.map((key) => (
@@ -119,7 +150,7 @@ export default function DashboardPage() {
         {layout.quick
           .map((q) => QUICK[q])
           .map(([name, icon, href]) => (
-            <Link key={name} href={href}>
+            <Link key={name} href={href(first)}>
               <Icon name={icon} />
               {name}
               <Icon name="arrow" size={16} />
@@ -141,7 +172,11 @@ function DashCard({ id }: { id: DashboardCard }) {
         title={`${CARD_LABELS.matters} (${data.matters.length})`}
         action={<Link href="/matters">View all →</Link>}
       >
-        <MatterList items={data.matters.slice(0, 5)} />
+        {data.matters.length ? (
+          <MatterList items={data.matters.slice(0, 5)} />
+        ) : (
+          <p className="empty">No matters yet.</p>
+        )}
       </Card>
     ),
     deadlines: () => (
@@ -180,35 +215,21 @@ function DashCard({ id }: { id: DashboardCard }) {
     activity: () => (
       <Card title={CARD_LABELS.activity} className="activity-card">
         <div className="scroll">
-          {[
-            [
-              "Motion to compel, draft updated",
-              "Anderson v. Meridian Tech",
-              "4h ago",
-              "/matters/anderson/documents",
-            ],
-            [
-              "New ruling detected",
-              "U.S. v. Nexora Tech · Sample",
-              "2h ago",
-              "/notices",
-            ],
-            [
-              "Deposition transcript added",
-              "Ridgeway Holdings LLC",
-              "1d ago",
-              "/matters/ridgeway/documents",
-            ],
-          ].map(([title, detail, time, href]) => (
-            <Link className="list-row" href={href} key={title}>
-              <Icon name="documents" />
-              <span className="grow">
-                <b>{title}</b>
-                <small>{detail}</small>
-              </span>
-              <small>{time}</small>
-            </Link>
-          ))}
+          {data.samples !== "on" && (
+            <p className="empty">No recent activity yet.</p>
+          )}
+          {(data.samples === "on" ? SAMPLE_ACTIVITY : []).map(
+            ([title, detail, time, href]) => (
+              <Link className="list-row" href={href} key={title}>
+                <Icon name="documents" />
+                <span className="grow">
+                  <b>{title}</b>
+                  <small>{detail}</small>
+                </span>
+                <small>{time}</small>
+              </Link>
+            ),
+          )}
         </div>
       </Card>
     ),

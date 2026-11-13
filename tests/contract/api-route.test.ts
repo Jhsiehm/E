@@ -7,12 +7,20 @@ import { NextRequest } from "next/server";
 import { ERROR_CODES, type ErrorBody } from "@/lib/contracts/api";
 import { toApiError } from "@/lib/api/client";
 
-async function call(path: string[], method = "GET", body?: unknown) {
+async function call(
+  path: string[],
+  method = "GET",
+  body?: unknown,
+  cookie?: string,
+) {
   vi.resetModules();
   const route = await import("@/app/api/[...path]/route");
   const req = new NextRequest("http://localhost/api/" + path.join("/"), {
     method,
-    headers: body ? { "content-type": "application/json" } : {},
+    headers: {
+      ...(body ? { "content-type": "application/json" } : {}),
+      ...(cookie ? { cookie } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   const handler = route[method as "GET" | "POST" | "PATCH" | "DELETE"];
@@ -87,14 +95,34 @@ describe("live mode (production build, no opt-in)", () => {
 });
 
 describe("fixture mode", () => {
-  it("serves labelled sample data in development", async () => {
+  it("starts a new demo workspace empty", async () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("CASEVEX_DATA_MODE", "");
     const res = await call(["bootstrap"]);
     expect(res.status).toBe(200);
     expect(res.headers.get("x-casevex-data-mode")).toBe("fixture");
     const body = await res.json();
+    expect(body.matters).toHaveLength(0);
+    expect(body.documents).toHaveLength(0);
+    expect(body.notices).toHaveLength(0);
+    expect(body.samples).toBe("off");
+  }, 10_000);
+
+  it("serves labelled sample cases only when the person chose them", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("CASEVEX_DATA_MODE", "");
+    const res = await call(
+      ["bootstrap"],
+      "GET",
+      undefined,
+      `casevex-demo=${crypto.randomUUID()}; casevex-samples=on`,
+    );
+    const body = await res.json();
+    expect(body.samples).toBe("on");
     expect(body.matters).toHaveLength(5);
+    expect(body.matters.every((m: { sample?: boolean }) => m.sample)).toBe(
+      true,
+    );
   }, 10_000);
 
   it("serves sample data in a production build only with explicit opt-in", async () => {
