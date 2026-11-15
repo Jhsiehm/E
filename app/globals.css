@@ -2308,7 +2308,6 @@ button.wide {
   padding: 48px clamp(24px, 5vw, 64px);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   gap: 14px;
   position: relative;
   overflow: hidden;
@@ -2321,34 +2320,84 @@ button.wide {
 .auth-panel .eyebrow {
   color: var(--creme);
 }
-.auth-grid {
-  position: absolute;
-  top: 48px;
-  right: 48px;
+/* Sign-in panel art (components/account/AuthPanelArt.tsx): scattered
+   boxes glide into the Casevex mark, then a slow glow passes through it
+   every 9 seconds. Each box carries its own colour (--c), opacity (--o),
+   scattered offset in box widths (--sx, --sy), tilt (--sr) and delays. */
+.auth-art {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: repeat(8, 22px);
-  gap: 6px;
+  place-items: center;
+  padding-bottom: 24px;
 }
-.auth-grid i {
-  width: 22px;
-  height: 22px;
-  border-radius: 3px;
-  background: #62929e;
-  opacity: 0.85;
+.auth-art-mark {
+  --cell: clamp(14px, min(2.5vw, 4vh), 36px);
+  --inner: calc(var(--cell) * 0.16);
+  --block: calc(var(--cell) * 0.38);
+  display: grid;
+  grid-template-columns:
+    repeat(3, var(--cell) var(--cell) var(--block))
+    var(--cell) var(--cell);
+  grid-template-rows:
+    repeat(3, var(--cell) var(--cell) var(--block))
+    var(--cell) var(--cell);
+  gap: var(--inner);
 }
-.auth-grid i:nth-child(3n) {
-  background: #9fc1c9;
+.auth-art-mark i {
+  border-radius: calc(var(--cell) * 0.14);
+  background: var(--c);
+  opacity: var(--o);
+  animation:
+    auth-art-settle 3.4s cubic-bezier(0.22, 0.61, 0.24, 1) var(--settle)
+      both,
+    auth-art-glow 9s ease-in-out var(--glow) infinite;
 }
-.auth-grid i:nth-child(-n + 5),
-.auth-grid i:nth-child(9),
-.auth-grid i:nth-child(10) {
-  background: var(--rose);
+@keyframes auth-art-settle {
+  0% {
+    opacity: 0;
+    transform: translate(
+        calc(var(--sx) * var(--cell) * 1.6),
+        calc(var(--sy) * var(--cell) * 1.6)
+      )
+      rotate(var(--sr)) scale(0.82);
+  }
+  25% {
+    opacity: calc(var(--o) * 0.55);
+  }
+  100% {
+    opacity: var(--o);
+    transform: none;
+  }
 }
-.auth-grid i:nth-child(7n + 2) {
-  background: #7a4d66;
+@keyframes auth-art-glow {
+  0%,
+  22%,
+  100% {
+    filter: none;
+  }
+  9% {
+    filter: brightness(1.24);
+  }
 }
-.auth-grid i:nth-child(n + 41) {
-  opacity: 0.35;
+.auth-panel-rule {
+  width: 72px;
+  height: 1px;
+  background: var(--creme);
+  opacity: 0.55;
+  transform-origin: left;
+  animation: auth-art-rule 1.2s var(--motion-ease) 3.6s both;
+}
+@keyframes auth-art-rule {
+  from {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-art-mark i,
+  .auth-panel-rule {
+    animation: none;
+  }
 }
 @media (max-width: 820px) {
   .auth-shell {
