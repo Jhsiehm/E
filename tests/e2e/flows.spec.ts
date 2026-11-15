@@ -10,6 +10,13 @@ test("new matter is created and opened", async ({ page }) => {
   await dialog.getByRole("button", { name: /Create matter/ }).click();
   await expect(page).toHaveURL(/\/matters\/(?!anderson)[\w-]+$/);
   await expect(page.locator("main h1")).toHaveText("Browser test matter");
+  // Adding documents is offered straight away and can be skipped.
+  await expect(dialog.getByText("Browser test matter")).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Choose a folder" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Skip for now" }).click();
+  await expect(dialog).toBeHidden();
 });
 
 test("matter search filters the table and updates the URL", async ({

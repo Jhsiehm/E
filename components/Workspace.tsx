@@ -192,6 +192,7 @@ export default function Workspace() {
                 {
                   matter: "New matter",
                   upload: "Upload documents",
+                  "upload-new": "Add documents to your new case",
                   event: "Add event",
                   notice: "Notice details",
                   document: "Document details",
@@ -209,7 +210,9 @@ export default function Workspace() {
             drawer={modal === "notice"}
           >
             {modal === "matter" && <NewMatterModal />}
-            {modal === "upload" && <UploadModal />}
+            {(modal === "upload" || modal === "upload-new") && (
+              <UploadModal fresh={modal === "upload-new"} />
+            )}
             {modal === "event" && <EventModal />}
             {modal === "event-detail" && <EventDetailModal />}
             {modal === "notice" && <NoticeModal />}

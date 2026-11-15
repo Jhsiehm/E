@@ -4,12 +4,14 @@ import { useWorkspace } from "@/components/workspace/context";
 
 /** Create a matter. */
 export default function NewMatterModal() {
-  const { router, data, busy, submit } = useWorkspace();
+  const { data, busy, submit, openAfter } = useWorkspace();
   return (
     <form
       onSubmit={async (e) => {
         const r = await submit(e, "matters");
-        if (r) router.push("/matters/" + r.id);
+        if (!r) return;
+        // Straight on to adding the case's documents; one click skips it.
+        openAfter("/matters/" + r.id, "upload-new", r.id);
       }}
     >
       <label>
@@ -64,6 +66,7 @@ export default function NewMatterModal() {
         Case summary
         <textarea name="summary" placeholder="What is this matter about?" />
       </label>
+      <small>Next, you can add the case&apos;s documents in one go.</small>
       <button className="primary" disabled={busy}>
         Create matter
       </button>

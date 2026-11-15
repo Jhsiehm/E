@@ -20,15 +20,19 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
  * never stops the rest. With the real database each file goes to private
  * storage; the demo records names only.
  */
-export default function UploadModal() {
+export default function UploadModal({ fresh = false }: { fresh?: boolean }) {
   const ws = useWorkspace();
-  const { params, data, matter, droppedFiles } = ws;
+  const { params, data, matter, droppedFiles, selected } = ws;
   // Files dropped on the Documents page arrive with the window.
   const [items, setItems] = useState<BatchItem[]>(() => toItems(droppedFiles));
   const [running, setRunning] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [matterId, setMatterId] = useState(
-    matter?.id || params.get("matterId") || data.matters[0]?.id || "",
+    (fresh && selected) ||
+      matter?.id ||
+      params.get("matterId") ||
+      data.matters[0]?.id ||
+      "",
   );
   const filesInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -109,25 +113,35 @@ export default function UploadModal() {
         void start(ready);
       }}
     >
-      <p>
-        Add PDF or Word files to a matter, as many as you like. Only people on
-        that matter can open them.
-      </p>
-      <label>
-        Matter
-        <select
-          name="matterId"
-          value={matterId}
-          disabled={running}
-          onChange={(e) => setMatterId(e.target.value)}
-        >
-          {data.matters.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      {fresh ? (
+        <p>
+          <strong>{matterName ?? "Your case"}</strong> is created. Add its
+          documents now, as many as you like, or skip this and add them later
+          from the Documents tab.
+        </p>
+      ) : (
+        <p>
+          Add PDF or Word files to a matter, as many as you like. Only people on
+          that matter can open them.
+        </p>
+      )}
+      {!fresh && (
+        <label>
+          Matter
+          <select
+            name="matterId"
+            value={matterId}
+            disabled={running}
+            onChange={(e) => setMatterId(e.target.value)}
+          >
+            {data.matters.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {!running && !done && (
         <div
           className={`upload-drop${dragging ? " is-over" : ""}${items.length ? " is-compact" : ""}`}
@@ -200,6 +214,11 @@ export default function UploadModal() {
         </>
       )}
       <div className="upload-actions">
+        {fresh && !running && saved === 0 && failed.length === 0 && (
+          <button type="button" onClick={() => ws.setModal("")}>
+            Skip for now
+          </button>
+        )}
         {!running && failed.length > 0 && (
           <button type="button" onClick={retry}>
             Try again
