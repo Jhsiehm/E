@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import AnimatedFavicon from "@/components/AnimatedFavicon";
 export const metadata: Metadata = {
   title: "Casevex | Legal research workspace",
   description:
@@ -8,7 +9,10 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AnimatedFavicon />
+      </body>
     </html>
   );
 }
