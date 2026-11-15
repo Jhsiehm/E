@@ -193,6 +193,7 @@ function DashCard({ id }: { id: DashboardCard }) {
         action={<Link href="/notices">View all →</Link>}
       >
         <div className="scroll">
+          {!data.notices.length && <p className="empty">No notices yet.</p>}
           {data.notices.slice(0, 4).map((n) => (
             <button
               className="list-row"

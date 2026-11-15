@@ -490,6 +490,18 @@ main:focus {
   gap: 14px;
   grid-template-rows: minmax(0, 1fr);
 }
+/* Dashboard cards can be short on a laptop screen: keep empty states inside. */
+.dashboard-grid .empty {
+  min-height: 0;
+  padding: 8px;
+  gap: 8px;
+}
+.dashboard-grid .empty h3 {
+  font-size: 15px;
+}
+.dashboard-grid .empty svg {
+  display: none;
+}
 .card {
   background: var(--raised);
   border: 1px solid var(--rule);

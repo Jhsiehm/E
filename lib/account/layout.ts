@@ -164,7 +164,7 @@ const PROMPT_TEMPLATES: Record<LayoutPreset, string[]> = {
   ],
   regulatory: [
     "New {niche} guidance or enforcement actions this quarter",
-    "How {court} courts have reviewed agency action on {niche}",
+    "How courts in {court} have reviewed agency action on {niche}",
     "Compliance gaps clients most often miss in {niche}",
   ],
 };
