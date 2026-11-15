@@ -30,7 +30,7 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [modal, setModal] = useState(""),
-    [droppedFile, setDroppedFile] = useState<File | null>(null),
+    [droppedFiles, setDroppedFiles] = useState<File[]>([]),
     [selected, setSelected] = useState(""),
     [busy, setBusy] = useState(false),
     [question, setQuestion] = useState(""),
@@ -117,7 +117,7 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
   const clear = () => router.replace(pathname, { scroll: false });
   const q = params.get("q") || "";
   const open = (name: string, id = "") => {
-    if (name === "upload") setDroppedFile(null);
+    if (name === "upload") setDroppedFiles([]);
     setSelected(id);
     setModal(name);
   };
@@ -228,8 +228,8 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
     setToast,
     modal,
     setModal,
-    droppedFile,
-    setDroppedFile,
+    droppedFiles,
+    setDroppedFiles,
     selected,
     setSelected,
     busy,

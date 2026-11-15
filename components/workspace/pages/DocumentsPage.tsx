@@ -3,10 +3,11 @@ import Icon from "@/components/Icon";
 import { Card, Filter, Search } from "@/components/workspace/ui";
 import { Header, DocumentTable } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
+import { filesFromDrop } from "@/lib/api/upload-batch";
 
 /** Global documents table. */
 export default function DocumentsPage() {
-  const { params, data, setDroppedFile, query, q, open } = useWorkspace();
+  const { params, data, setDroppedFiles, query, q, open } = useWorkspace();
   const items = data.documents.filter(
     (d) =>
       d.name.toLowerCase().includes(q.toLowerCase()) &&
@@ -21,7 +22,7 @@ export default function DocumentsPage() {
         action={
           <button className="primary" onClick={() => open("upload")}>
             <Icon name="upload" />
-            Upload document
+            Upload documents
           </button>
         }
       />
@@ -54,18 +55,19 @@ export default function DocumentsPage() {
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          const files = e.dataTransfer.files;
-          if (files.length) {
+          // Read the files (and any folders) first, then open the
+          // upload window with them already listed.
+          filesFromDrop(e.dataTransfer).then((files) => {
             open("upload");
-            setDroppedFile(files[0]);
-          }
+            setDroppedFiles(files);
+          });
         }}
       >
         <Icon name="upload" />
         <span>
-          Upload a document to your workspace{" "}
+          Drop documents or a whole folder here, or click to choose{" "}
           <small>
-            PDF or DOCX · Up to 20 MB · Metadata only in this prototype
+            PDF or Word (.docx) · Up to 20 MB each · As many as you like
           </small>
         </span>
       </button>

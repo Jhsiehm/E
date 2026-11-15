@@ -191,7 +191,7 @@ export default function Workspace() {
               (
                 {
                   matter: "New matter",
-                  upload: "Upload document",
+                  upload: "Upload documents",
                   event: "Add event",
                   notice: "Notice details",
                   document: "Document details",

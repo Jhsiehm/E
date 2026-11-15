@@ -16,7 +16,7 @@ export default function DocumentsTab() {
       action={
         <button onClick={() => open("upload")}>
           <Icon name="upload" />
-          Upload document
+          Upload documents
         </button>
       }
     >
