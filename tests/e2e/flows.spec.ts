@@ -10,6 +10,13 @@ test("new matter is created and opened", async ({ page }) => {
   await dialog.getByRole("button", { name: /Create matter/ }).click();
   await expect(page).toHaveURL(/\/matters\/(?!anderson)[\w-]+$/);
   await expect(page.locator("main h1")).toHaveText("Browser test matter");
+  // Adding documents is offered straight away and can be skipped.
+  await expect(dialog.getByText("Browser test matter")).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Choose a folder" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Skip for now" }).click();
+  await expect(dialog).toBeHidden();
 });
 
 test("matter search filters the table and updates the URL", async ({
@@ -69,4 +76,31 @@ test("agent assignment dialog opens from the catalogue", async ({ page }) => {
   await expect(
     page.getByRole("dialog").getByRole("heading", { name: "Assign agent" }),
   ).toBeVisible();
+});
+
+test("many documents upload at once and a bad file does not stop the rest", async ({
+  page,
+}) => {
+  await openApp(page, "/matters/anderson/documents");
+  await page.getByRole("button", { name: "Upload documents" }).click();
+  const dialog = page.getByRole("dialog");
+  const pdf = (name: string) => ({
+    name,
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4 test"),
+  });
+  await dialog
+    .getByLabel("Choose files")
+    .setInputFiles([
+      pdf("Exhibit A.pdf"),
+      pdf("Exhibit B.pdf"),
+      { name: "photo.jpg", mimeType: "image/jpeg", buffer: Buffer.from("x") },
+    ]);
+  await expect(dialog.getByText("2 documents ready to upload.")).toBeVisible();
+  await expect(dialog.getByText("Only PDF and Word")).toBeVisible();
+  await dialog.getByRole("button", { name: "Upload 2 documents" }).click();
+  await expect(dialog.getByText(/2 documents saved\./)).toBeVisible();
+  await dialog.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByText("Exhibit A").first()).toBeVisible();
+  await expect(page.getByText("Exhibit B").first()).toBeVisible();
 });

@@ -41,6 +41,7 @@ const paths: Record<string, React.ReactNode> = {
   send: <path d="m3 11 18-8-6 18-4-8zm8 2L21 3" />,
   close: <path d="m5 5 14 14M5 19 19 5" />,
   upload: <path d="M12 16V3m-5 5 5-5 5 5M3 16v5h18v-5" />,
+  check: <path d="m4 12 5 5L20 6" />,
   edit: <path d="m4 16 12-12 4 4L8 20H4zm10-10 4 4" />,
   lock: (
     <>

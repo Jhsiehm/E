@@ -30,7 +30,7 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [modal, setModal] = useState(""),
-    [droppedFile, setDroppedFile] = useState<File | null>(null),
+    [droppedFiles, setDroppedFiles] = useState<File[]>([]),
     [selected, setSelected] = useState(""),
     [busy, setBusy] = useState(false),
     [question, setQuestion] = useState(""),
@@ -72,8 +72,14 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
       alive.current = false;
     };
   }, [refresh]);
+  // A window asked to open on the next page (see openAfter) survives the
+  // page change; every other window closes when the page changes.
+  const afterRoute = useRef<{ name: string; id: string } | null>(null);
   useEffect(() => {
-    setModal("");
+    const next = afterRoute.current;
+    afterRoute.current = null;
+    if (next) setSelected(next.id);
+    setModal(next?.name ?? "");
     setEditing(false);
     setStream(null);
   }, [pathname]);
@@ -117,9 +123,16 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
   const clear = () => router.replace(pathname, { scroll: false });
   const q = params.get("q") || "";
   const open = (name: string, id = "") => {
-    if (name === "upload") setDroppedFile(null);
+    if (name.startsWith("upload")) setDroppedFiles([]);
     setSelected(id);
     setModal(name);
+  };
+  /** Go to a page and open a window there once it has loaded. */
+  const openAfter = (path: string, name: string, id = "") => {
+    if (path === pathname) return open(name, id);
+    if (name.startsWith("upload")) setDroppedFiles([]);
+    afterRoute.current = { name, id };
+    router.push(path);
   };
   const submit = async (
     e: FormEvent<HTMLFormElement>,
@@ -228,8 +241,9 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
     setToast,
     modal,
     setModal,
-    droppedFile,
-    setDroppedFile,
+    droppedFiles,
+    setDroppedFiles,
+    openAfter,
     selected,
     setSelected,
     busy,
