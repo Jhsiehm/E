@@ -1,89 +1,154 @@
-import type { CSSProperties } from "react";
-import { restingColour } from "@/lib/favicon-mark";
+"use client";
+import { useEffect, useRef } from "react";
+import { gatherScene } from "@/lib/auth-art/gather";
+import { ledgerScene } from "@/lib/auth-art/ledger";
+import { setDpr, type Frame } from "@/lib/auth-art/shared";
+
+type Variant = "gather" | "ledger";
 
 /**
- * The picture on the navy side of the sign-in and sign-up screens.
+ * The picture on the navy side of the sign-in and sign-up screens, drawn on
+ * a canvas so the boxes can have depth, light and shadow.
  *
- * Sixty-four boxes start scattered and tilted across the panel, like loose
- * papers on a desk, then glide one by one into the Casevex mark: the same
- * 4x4 boxes and colours as the logo, each box drawn as a 2x2 cluster. Once
- * the mark has settled a slow diagonal glow passes through it every few
- * seconds, the logo's ripple at a calmer pace. Matters, authorities and
- * deadlines coming together in one place.
+ * Two directions, picked with `?art=` on the sign-in URL while we choose:
  *
- * Everything is CSS (styles in app/globals.css under "Sign-in panel art"),
- * so the scattered positions are worked out here from a fixed seed and the
- * server and browser always agree. People who ask for reduced motion see the
- * finished mark, still.
+ * - "gather" (default): a slow field of boxes drifts upward at three depths.
+ *   Sixty-four of them swoop forward out of the field and settle into the
+ *   Casevex mark (the logo's 4x4 boxes and colours, each a 2x2 cluster).
+ *   Afterwards the mark breathes, a soft light passes across it, now and
+ *   then one cluster lifts like a file being pulled, and everything leans a
+ *   little toward the pointer.
+ * - "ledger": the mark as raised blocks on a quiet floor of tiles, seen from
+ *   above at an angle. Blocks drop into place, then a slow swell rolls
+ *   through the floor and the tiles near the pointer rise to meet it.
+ *
+ * People who ask for reduced motion get the finished picture, still. The
+ * loop only runs while the panel is on screen (it is hidden on phones).
  */
 
-/** Small deterministic random numbers (mulberry32). */
-function seeded(seed: number) {
-  let a = seed;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-type Box = {
-  row: number;
-  col: number;
-  style: CSSProperties;
-};
-
-function boxes(): Box[] {
-  const rand = seeded(20261115);
-  const out: Box[] = [];
-  for (let row = 0; row < 8; row += 1) {
-    for (let col = 0; col < 8; col += 1) {
-      // Which box of the logo this cluster belongs to.
-      const logoIndex = Math.floor(row / 2) * 4 + Math.floor(col / 2);
-      // Scatter in units of one box, so it scales with the mark.
-      const angle = rand() * Math.PI * 2;
-      const reach = 4 + rand() * 7;
-      const sx = Math.cos(angle) * reach;
-      const sy = Math.sin(angle) * reach * 0.8;
-      out.push({
-        row,
-        col,
-        style: {
-          "--c": restingColour(logoIndex),
-          // A little variation inside each cluster, like paper stock.
-          "--o": (0.78 + rand() * 0.22).toFixed(2),
-          "--sx": sx.toFixed(2),
-          "--sy": sy.toFixed(2),
-          "--sr": `${Math.round((rand() - 0.5) * 70)}deg`,
-          // Boxes arrive in a loose order, top-left first.
-          "--settle": `${(0.25 + (row + col) * 0.09 + rand() * 0.5).toFixed(2)}s`,
-          // The glow travels along the diagonals, as in the logo ripple.
-          "--glow": `${(5.6 + (row + col) * 0.14).toFixed(2)}s`,
-        } as CSSProperties,
-      });
-    }
-  }
-  return out;
-}
-
-const BOXES = boxes();
+/* ---------- Component ---------- */
 
 export default function AuthPanelArt() {
+  const room = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const cv = canvas.current;
+    const spot = room.current;
+    const panel = cv?.parentElement;
+    if (!cv || !spot || !panel) return;
+    const g = cv.getContext("2d");
+    if (!g) return;
+
+    let variant: Variant = "gather";
+    try {
+      const v = new URLSearchParams(location.search).get("art");
+      if (v === "ledger") variant = "ledger";
+    } catch {}
+    const scene = variant === "ledger" ? ledgerScene() : gatherScene();
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let start = -1;
+    let raf = 0;
+    const ptr = { x: 0, y: 0, in: 0, tx: 0, ty: 0, tin: 0, X: -1e4, Y: -1e4 };
+
+    const frame = (t: number) => {
+      const r = panel.getBoundingClientRect();
+      const s = spot.getBoundingClientRect();
+      const f: Frame = {
+        g,
+        w,
+        h,
+        dpr,
+        t,
+        cx: s.left - r.left + s.width / 2,
+        cy: s.top - r.top + s.height / 2,
+        room: Math.min(s.width, s.height),
+        px: ptr.x,
+        py: ptr.y,
+        pin: ptr.in,
+        pxPx: ptr.X,
+        pyPx: ptr.Y,
+      };
+      setDpr(dpr);
+      scene.draw(f);
+    };
+
+    const tick = () => {
+      raf = 0;
+      if (!w || !h) return;
+      const now = performance.now() / 1000;
+      if (start < 0) start = now;
+      ptr.x += (ptr.tx - ptr.x) * 0.04;
+      ptr.y += (ptr.ty - ptr.y) * 0.04;
+      ptr.in += (ptr.tin - ptr.in) * 0.05;
+      frame(now - start);
+      raf = requestAnimationFrame(tick);
+    };
+
+    const still = () => frame(60);
+
+    const resize = () => {
+      const r = panel.getBoundingClientRect();
+      w = r.width;
+      h = r.height;
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(h * dpr);
+      if (!w || !h) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        return;
+      }
+      if (reduced.matches) still();
+      else if (!raf) raf = requestAnimationFrame(tick);
+    };
+
+    const onMove = (e: PointerEvent) => {
+      const r = panel.getBoundingClientRect();
+      const inside =
+        e.clientX >= r.left &&
+        e.clientX <= r.right &&
+        e.clientY >= r.top &&
+        e.clientY <= r.bottom;
+      ptr.tin = inside ? 1 : 0;
+      ptr.tx = Math.max(
+        -1,
+        Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1),
+      );
+      ptr.ty = Math.max(
+        -1,
+        Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1),
+      );
+      ptr.X = e.clientX - r.left;
+      ptr.Y = e.clientY - r.top;
+    };
+    const onLeave = () => {
+      ptr.tin = 0;
+      ptr.tx = 0;
+      ptr.ty = 0;
+    };
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(panel);
+    resize();
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("pointerleave", onLeave);
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
+
   return (
-    <div className="auth-art" aria-hidden="true">
-      <div className="auth-art-mark">
-        {BOXES.map((b) => (
-          <i
-            key={`${b.row}-${b.col}`}
-            style={{
-              ...b.style,
-              gridRow: b.row + 1 + Math.floor(b.row / 2),
-              gridColumn: b.col + 1 + Math.floor(b.col / 2),
-            }}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      <canvas ref={canvas} className="auth-art-canvas" aria-hidden="true" />
+      <div ref={room} className="auth-art" aria-hidden="true" />
+    </>
   );
 }

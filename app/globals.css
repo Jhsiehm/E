@@ -2320,65 +2320,22 @@ button.wide {
 .auth-panel .eyebrow {
   color: var(--creme);
 }
-/* Sign-in panel art (components/account/AuthPanelArt.tsx): scattered
-   boxes glide into the Casevex mark, then a slow glow passes through it
-   every 9 seconds. Each box carries its own colour (--c), opacity (--o),
-   scattered offset in box widths (--sx, --sy), tilt (--sr) and delays. */
+/* Sign-in panel art (components/account/AuthPanelArt.tsx): a canvas
+   behind the panel's text. .auth-art is the empty space above the tagline;
+   the picture centres itself there. */
+.auth-art-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
 .auth-art {
   flex: 1;
   min-height: 0;
-  display: grid;
-  place-items: center;
-  padding-bottom: 24px;
 }
-.auth-art-mark {
-  --cell: clamp(14px, min(2.5vw, 4vh), 36px);
-  --inner: calc(var(--cell) * 0.16);
-  --block: calc(var(--cell) * 0.38);
-  display: grid;
-  grid-template-columns:
-    repeat(3, var(--cell) var(--cell) var(--block))
-    var(--cell) var(--cell);
-  grid-template-rows:
-    repeat(3, var(--cell) var(--cell) var(--block))
-    var(--cell) var(--cell);
-  gap: var(--inner);
-}
-.auth-art-mark i {
-  border-radius: calc(var(--cell) * 0.14);
-  background: var(--c);
-  opacity: var(--o);
-  animation:
-    auth-art-settle 3.4s cubic-bezier(0.22, 0.61, 0.24, 1) var(--settle)
-      both,
-    auth-art-glow 9s ease-in-out var(--glow) infinite;
-}
-@keyframes auth-art-settle {
-  0% {
-    opacity: 0;
-    transform: translate(
-        calc(var(--sx) * var(--cell) * 1.6),
-        calc(var(--sy) * var(--cell) * 1.6)
-      )
-      rotate(var(--sr)) scale(0.82);
-  }
-  25% {
-    opacity: calc(var(--o) * 0.55);
-  }
-  100% {
-    opacity: var(--o);
-    transform: none;
-  }
-}
-@keyframes auth-art-glow {
-  0%,
-  22%,
-  100% {
-    filter: none;
-  }
-  9% {
-    filter: brightness(1.24);
-  }
+.auth-panel > :not(canvas) {
+  position: relative;
 }
 .auth-panel-rule {
   width: 72px;
@@ -2394,7 +2351,6 @@ button.wide {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auth-art-mark i,
   .auth-panel-rule {
     animation: none;
   }
