@@ -1,4 +1,4 @@
-/** Sign-in panel art, "gather": see components/account/AuthPanelArt.tsx. */
+/** Sign-in panel art: see components/account/AuthPanelArt.tsx. */
 import type { Scene } from "./shared";
 import {
   ROSE,

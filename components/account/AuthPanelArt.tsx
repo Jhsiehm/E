@@ -1,32 +1,22 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { gatherScene } from "@/lib/auth-art/gather";
-import { ledgerScene } from "@/lib/auth-art/ledger";
 import { setDpr, type Frame } from "@/lib/auth-art/shared";
-
-type Variant = "gather" | "ledger";
 
 /**
  * The picture on the navy side of the sign-in and sign-up screens, drawn on
  * a canvas so the boxes can have depth, light and shadow.
  *
- * Two directions, picked with `?art=` on the sign-in URL while we choose:
- *
- * - "gather" (default): a slow field of boxes drifts upward at three depths.
- *   Sixty-four of them swoop forward out of the field and settle into the
- *   Casevex mark (the logo's 4x4 boxes and colours, each a 2x2 cluster).
- *   Afterwards the mark breathes, a soft light passes across it, now and
- *   then one cluster lifts like a file being pulled, and everything leans a
- *   little toward the pointer.
- * - "ledger": the mark as raised blocks on a quiet floor of tiles, seen from
- *   above at an angle. Blocks drop into place, then a slow swell rolls
- *   through the floor and the tiles near the pointer rise to meet it.
+ * A slow field of boxes drifts upward at three depths. Sixty-four of them
+ * swoop forward out of the field and settle into the Casevex mark (the
+ * logo's 4x4 boxes and colours, each a 2x2 cluster). Afterwards the mark
+ * breathes, a soft light passes across it, now and then one cluster lifts
+ * like a file being pulled, and everything leans a little toward the
+ * pointer. Matters, authorities and deadlines coming together in one place.
  *
  * People who ask for reduced motion get the finished picture, still. The
  * loop only runs while the panel is on screen (it is hidden on phones).
  */
-
-/* ---------- Component ---------- */
 
 export default function AuthPanelArt() {
   const room = useRef<HTMLDivElement>(null);
@@ -40,12 +30,7 @@ export default function AuthPanelArt() {
     const g = cv.getContext("2d");
     if (!g) return;
 
-    let variant: Variant = "gather";
-    try {
-      const v = new URLSearchParams(location.search).get("art");
-      if (v === "ledger") variant = "ledger";
-    } catch {}
-    const scene = variant === "ledger" ? ledgerScene() : gatherScene();
+    const scene = gatherScene();
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let w = 0;
