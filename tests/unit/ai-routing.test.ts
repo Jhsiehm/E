@@ -66,7 +66,7 @@ describe("AI function registry", () => {
     expect(() =>
       resolveRoute(
         "research.verify_support",
-        env({ "tier:frontier": ["google/gemini-3.1-pro-preview"] }),
+        env({ "tier:frontier": ["google/gemini-4-carbon"] }),
       ),
     ).toThrow(/shares its vendor/);
     expect(
@@ -101,7 +101,7 @@ describe("AI function registry", () => {
     const m = [{ role: "user" as const, content: "q" }];
     await runAiFunction("research.verify_support", { messages: m }, deps);
     expect(bodies[0].reasoning).toBeUndefined();
-    expect(bodies[0].max_tokens).toBe(400 + 2000);
+    expect(bodies[0].max_tokens).toBe(1500 + 2000);
     await runAiFunction("research.route", { messages: m }, deps);
     expect(bodies[1].reasoning).toEqual({ enabled: false });
     expect(bodies[1].max_tokens).toBe(150);
@@ -152,10 +152,10 @@ describe("model overrides", () => {
   it("lets a function override beat a tier override", () => {
     const e = env({
       "tier:frontier": "openai/gpt-6.1-sol",
-      "research.draft": ["google/gemini-3.1-pro-preview"],
+      "research.draft": ["google/gemini-4-carbon"],
     });
     expect(resolveRoute("research.draft", e).chain).toEqual([
-      "google/gemini-3.1-pro-preview",
+      "google/gemini-4-carbon",
     ]);
     expect(resolveRoute("motion.draft", e).chain).toEqual([
       "openai/gpt-6.1-sol",
