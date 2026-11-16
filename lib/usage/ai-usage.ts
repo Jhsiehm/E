@@ -38,6 +38,14 @@ export function usageRecorder(ctx: LiveContext, runId?: string) {
 export async function aiUsageHooks(runId?: string): Promise<AiUsageHooks> {
   const ctx = await liveContext().catch(() => null);
   if (!ctx || ctx instanceof Response) return { overLimit: false };
+  return aiUsageHooksFor(ctx, runId);
+}
+
+/** The same hooks for a caller whose context is already known. */
+export async function aiUsageHooksFor(
+  ctx: LiveContext,
+  runId?: string,
+): Promise<AiUsageHooks> {
   const { data, error } = await ctx.db.rpc("ai_spend_today", {
     ws: ctx.workspaceId,
   });
