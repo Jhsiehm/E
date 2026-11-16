@@ -8,6 +8,8 @@ import type { LiveContext } from "./context";
 import { fail, fromDbError, ok } from "./respond";
 
 const MAX_QUESTION = 2000;
+/** Stop well inside the route's 300-second limit and say so plainly. */
+const DEADLINE_MS = 240_000;
 
 /**
  * GET/POST /api/matters/:id/chat in live mode.
@@ -62,19 +64,52 @@ export async function matterChat(
       "Your firm has reached today's AI research budget. It resets at midnight UTC.",
     );
 
+  const deadline = AbortSignal.timeout(DEADLINE_MS);
+  const signal = AbortSignal.any([req.signal, deadline]);
+  const started = Date.now();
+  const since = () => Date.now() - started;
+  let stage = "retrieve";
   try {
-    const retrieval = await retrieve(registry, {
-      question,
-      signal: req.signal,
+    const retrieval = await retrieve(registry, { question, signal });
+    // Timings and counts only: never the question or the law.
+    console.info("matter chat retrieved", {
+      ms: since(),
+      evidence: retrieval.evidence.length,
+      providerErrors: retrieval.providerErrors.map((e) => e.provider),
     });
+    stage = "answer";
     const result = await answerQuestion(question, retrieval, {
-      signal: req.signal,
-      complete: <T>(r: CompleteRequest<T>) =>
-        complete<T>({ ...r, onUsage: hooks.onUsage ?? r.onUsage }),
+      signal,
+      complete: async <T>(r: CompleteRequest<T>) => {
+        const t = Date.now();
+        try {
+          return await complete<T>({
+            ...r,
+            onUsage: hooks.onUsage ?? r.onUsage,
+          });
+        } finally {
+          console.info("matter chat model call", {
+            task: r.task,
+            ms: Date.now() - t,
+          });
+        }
+      },
     });
+    console.info("matter chat answered", { ms: since(), mode: result.mode });
     return ok(toChatMessage(result, crypto.randomUUID()));
   } catch (err) {
-    console.error("matter chat research failed", (err as Error)?.name);
+    console.error("matter chat research failed", {
+      stage,
+      ms: since(),
+      error: (err as Error)?.name,
+      code: (err as { code?: string })?.code,
+    });
+    if (deadline.aborted)
+      return fail(
+        504,
+        "provider_error",
+        "This question took too long to research. Try a narrower question, for example one statute or one legal issue.",
+      );
     return fail(
       502,
       "provider_error",
