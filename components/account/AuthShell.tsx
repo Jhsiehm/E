@@ -1,4 +1,5 @@
 import Logo from "@/components/Logo";
+import AuthPanelArt from "@/components/account/AuthPanelArt";
 import type { ReactNode } from "react";
 import { allowPrototype } from "@/lib/runtime/prototype";
 
@@ -23,11 +24,8 @@ export default function AuthShell({ children }: { children: ReactNode }) {
         </p>
       </main>
       <aside className="auth-panel" aria-hidden="true">
-        <div className="auth-grid">
-          {Array.from({ length: 64 }, (_, i) => (
-            <i key={i} />
-          ))}
-        </div>
+        <AuthPanelArt />
+        <span className="auth-panel-rule" />
         <p className="eyebrow">Legal research workspace</p>
         <h2>Every matter, its authorities and deadlines, in one place.</h2>
       </aside>
