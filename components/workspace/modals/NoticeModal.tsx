@@ -1,8 +1,14 @@
 "use client";
 import Link from "next/link";
 import { date } from "@/components/workspace/format";
-import { Chip, Foot } from "@/components/workspace/ui";
+import { Foot } from "@/components/workspace/ui";
 import { useWorkspace } from "@/components/workspace/context";
+
+const UPDATE_LINKS = {
+  strategy: "Review case strategy",
+  documents: "Review case documents",
+  deadlines: "Review case deadlines",
+};
 
 /** Notice details drawer. */
 export default function NoticeModal() {
@@ -18,24 +24,30 @@ export default function NoticeModal() {
         <p className="muted">{n.source}</p>
         <p>{n.detail}</p>
         <h3>Affected matters</h3>
-        {n.matterIds.map((id) => (
-          <Link className="impact-card" href={"/matters/" + id} key={id}>
-            <b>{nameOf(id)}</b>
-            {n.id === "n1" && (
-              <>
-                <Chip tone={id === "anderson" ? "olive" : "rose"}>
-                  {id === "anderson" ? "Strengthens" : "Weakens"} · Sample
-                </Chip>
-                <p>
-                  {id === "anderson"
-                    ? "A broader confidential-information standard may support the sample claim."
-                    : "A broader standard may create additional exposure under the sample facts."}
-                </p>
-              </>
-            )}
-            <span>Open matter →</span>
-          </Link>
-        ))}
+        {n.matterIds.map((id) => {
+          const update = n.caseUpdates?.find((item) => item.matterId === id);
+          return (
+            <section className="impact-card" aria-label={nameOf(id)} key={id}>
+              <h4>{nameOf(id)}</h4>
+              {update && (
+                <>
+                  <p>{update.impact}</p>
+                  <p className="eyebrow">Suggested update</p>
+                  <p>{update.nextStep}</p>
+                </>
+              )}
+              <Link href={`/matters/${id}${update ? `/${update.target}` : ""}`}>
+                {update ? UPDATE_LINKS[update.target] : "Open matter"} →
+              </Link>
+            </section>
+          );
+        })}
+        {!!n.caseUpdates?.length && (
+          <p className="muted">
+            Review these suggestions before editing. No case changes have been
+            made.
+          </p>
+        )}
         <Foot />
       </>
     )

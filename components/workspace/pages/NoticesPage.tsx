@@ -74,6 +74,7 @@ export default function NoticesPage() {
                 <span className="eyebrow">{n.kind}</span>
                 <strong>{n.title}</strong>
                 <small>{n.source}</small>
+                <span className="notice-summary">{n.summary || n.detail}</span>
                 <span className="notice-matters">
                   {n.matterIds.map((id) => (
                     <Chip key={id}>{nameOf(id)}</Chip>

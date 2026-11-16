@@ -12,6 +12,26 @@ export const seedNotices = (): Notice[] => [
     source: "U.S. v. Nexora Tech · 2d Cir. · Fictional sample",
     detail:
       "Sample impact analysis: strengthens Anderson; weakens Ridgeway. Review the opinion before relying on this analysis.",
+    summary:
+      "Review the trade-secret ruling, then update Anderson’s supporting argument and Ridgeway’s risk analysis.",
+    caseUpdates: [
+      {
+        matterId: "anderson",
+        impact:
+          "This fictional ruling may support Anderson’s confidentiality argument.",
+        nextStep:
+          "Compare the declaration with the sample ruling, then revise the trade-secret argument in the strategy notes. Flag the draft motion for attorney review.",
+        target: "strategy",
+      },
+      {
+        matterId: "ridgeway",
+        impact:
+          "The broader standard may increase exposure under Ridgeway’s sample facts.",
+        nextStep:
+          "Document factual distinctions and defenses in the strategy notes, and flag the relevant contract language for review.",
+        target: "strategy",
+      },
+    ],
     read: false,
     matterIds: ["anderson", "ridgeway"],
     createdAt: "2026-11-11T15:00:00Z",
@@ -23,6 +43,18 @@ export const seedNotices = (): Notice[] => [
     source: "U.S. Sup. Ct. · Fictional sample",
     detail:
       "A sample arbitration notice for review. No real ruling is represented.",
+    summary:
+      "Check Ridgeway’s arbitration clause and note whether the pending motion’s argument needs revision.",
+    caseUpdates: [
+      {
+        matterId: "ridgeway",
+        impact:
+          "The sample notice raises questions about the contract’s arbitration provision.",
+        nextStep:
+          "Review the contract’s notice and assent language, then record whether the pending motion needs a revised arbitration argument.",
+        target: "strategy",
+      },
+    ],
     read: false,
     matterIds: ["ridgeway"],
     createdAt: "2026-11-11T13:00:00Z",
@@ -33,6 +65,17 @@ export const seedNotices = (): Notice[] => [
     title: "Response to motion due in 7 days",
     source: "Ridgeway Holdings LLC",
     detail: "Response to motion is due November 18, 2026.",
+    summary:
+      "Confirm Ridgeway’s response deadline, assign a drafting owner, and set an internal review date.",
+    caseUpdates: [
+      {
+        matterId: "ridgeway",
+        impact: "Ridgeway’s sample response date is approaching.",
+        nextStep:
+          "Confirm the November 18 deadline, assign a drafting owner, and record the internal review date in the case calendar.",
+        target: "deadlines",
+      },
+    ],
     read: false,
     matterIds: ["ridgeway"],
     createdAt: "2026-11-11T12:00:00Z",
@@ -43,6 +86,17 @@ export const seedNotices = (): Notice[] => [
     title: "Docket update: order on motion to compel",
     source: "S.D.N.Y. · Anderson v. Meridian Tech",
     detail: "Sample docket activity. Review the order with the assigned team.",
+    summary:
+      "Add Anderson’s new order to the case documents and review its production requirements with the team.",
+    caseUpdates: [
+      {
+        matterId: "anderson",
+        impact: "The sample docket includes an order on the motion to compel.",
+        nextStep:
+          "Add the order to the case documents and record its production requirements for team review before changing any deadlines.",
+        target: "documents",
+      },
+    ],
     read: true,
     matterIds: ["anderson"],
     createdAt: "2026-11-10T12:00:00Z",
@@ -53,6 +107,18 @@ export const seedNotices = (): Notice[] => [
     title: "Document production reminder",
     source: "Parker Estates Trust",
     detail: "Document production is due November 24, 2026.",
+    summary:
+      "Check Parker’s outstanding documents and confirm the production and review dates.",
+    caseUpdates: [
+      {
+        matterId: "parker",
+        impact:
+          "The sample trust matter has a document production deadline on November 24.",
+        nextStep:
+          "Check which documents are still outstanding, confirm the production date, and record the team’s review milestone.",
+        target: "deadlines",
+      },
+    ],
     read: true,
     matterIds: ["parker"],
     createdAt: "2026-11-09T12:00:00Z",
