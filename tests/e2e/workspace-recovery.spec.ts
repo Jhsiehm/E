@@ -45,7 +45,7 @@ test("workspace load errors show the server's explanation", async ({
     }),
   );
   await page.goto("/");
-  await expect(page.getByRole("alert")).toHaveText(
+  await expect(page.locator(".boot").getByRole("alert")).toHaveText(
     "Your account needs a workspace invitation.",
   );
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
