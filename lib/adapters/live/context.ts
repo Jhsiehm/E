@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabaseConfig } from "@/lib/account/auth-mode";
+import { allowOpenSignup, supabaseConfig } from "@/lib/account/auth-mode";
 import { supabaseServer } from "@/lib/supabase/server";
 import { fail, fromDbError, notConfigured } from "./respond";
 
@@ -33,6 +33,12 @@ export async function liveContext(): Promise<LiveContext | Response> {
     .limit(1)
     .maybeSingle();
   if (error) return fromDbError(error);
+  if (!data && allowOpenSignup())
+    return fail(
+      403,
+      "workspace_required",
+      "Finish setting up your private workspace to continue.",
+    );
   if (!data)
     return fail(
       403,
