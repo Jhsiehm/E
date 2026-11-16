@@ -1,10 +1,11 @@
 "use server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DEMO_COOKIE, allowOpenSignup, resolveAuthMode } from "./auth-mode";
+import { DEMO_COOKIE, resolveAuthMode } from "./auth-mode";
 import { emptyProfile, sanitizeProfile, toRow, type Profile } from "./profile";
 import { DEMO_USER, decodeDemo, encodeDemo, getAccount } from "./server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { ensureOnboardingWorkspace } from "./workspace";
 
 type Result = { ok: true; profile: Profile } | { ok: false; error: string };
 
@@ -47,38 +48,36 @@ export async function saveProfile(
     return { ok: false, error: "Your session ended. Sign in again." };
   const profile = sanitizeProfile(input, account.user.email);
   profile.email = account.user.email;
-  if (opts.finishOnboarding && !profile.onboardedAt)
-    profile.onboardedAt = new Date().toISOString();
-  if (!opts.finishOnboarding)
-    profile.onboardedAt = account.profile?.onboardedAt ?? profile.onboardedAt;
+  // Completion is server-owned; a normal profile edit cannot skip setup.
+  profile.onboardedAt = account.profile?.onboardedAt ?? null;
+  if (opts.finishOnboarding) {
+    if (!profile.fullName)
+      return { ok: false, error: "Enter your full name to finish setup." };
+    profile.onboardedAt ??= new Date().toISOString();
+  }
 
   if (account.mode === "demo") {
     (await cookies()).set(DEMO_COOKIE, encodeDemo(profile), demoCookie);
     return { ok: true, profile };
   }
   const supabase = await supabaseServer();
-  const { error } = await supabase
+  if (opts.finishOnboarding) {
+    const error = await ensureOnboardingWorkspace(
+      supabase,
+      account.user.id,
+      profile,
+    );
+    if (error) return { ok: false, error };
+  }
+  // Only persist completion after workspace creation succeeds. A failed save
+  // can be retried safely: the membership check reuses the existing workspace.
+  const { data, error } = await supabase
     .from("profiles")
     .update(toRow(profile))
-    .eq("id", account.user.id);
-  if (error)
+    .eq("id", account.user.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data)
     return { ok: false, error: "We couldn't save your profile. Try again." };
-  if (opts.finishOnboarding && profile.firmName && allowOpenSignup()) {
-    const { count } = await supabase
-      .from("memberships")
-      .select("workspace_id", { count: "exact", head: true })
-      .eq("user_id", account.user.id);
-    if (!count) {
-      const { error: wsError } = await supabase.rpc("create_workspace", {
-        ws_name: profile.firmName,
-      });
-      if (wsError)
-        return {
-          ok: false,
-          error:
-            "Profile saved, but we couldn't create your firm workspace. Try again.",
-        };
-    }
-  }
   return { ok: true, profile };
 }

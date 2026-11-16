@@ -25,9 +25,17 @@ const STEPS = [
 ] as const;
 
 /** Five-step onboarding. Everything here can be changed later in Settings. */
-export default function OnboardingFlow({ initial }: { initial: Profile }) {
+export default function OnboardingFlow({
+  initial,
+  needsWorkspace = false,
+}: {
+  initial: Profile;
+  needsWorkspace?: boolean;
+}) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(
+    needsWorkspace && initial.onboardedAt ? STEPS.length - 1 : 0,
+  );
   const [draft, setDraft] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -43,13 +51,16 @@ export default function OnboardingFlow({ initial }: { initial: Profile }) {
   async function finish() {
     setBusy(true);
     setError("");
-    const res = await saveProfile(draft, { finishOnboarding: true });
-    if (!res.ok) {
+    try {
+      const res = await saveProfile(draft, { finishOnboarding: true });
+      if (!res.ok) return setError(res.error);
+      router.replace("/");
+      router.refresh();
+    } catch {
+      setError("We couldn't finish setup. Please try again.");
+    } finally {
       setBusy(false);
-      return setError(res.error);
     }
-    router.replace("/");
-    router.refresh();
   }
 
   return (
@@ -85,6 +96,12 @@ export default function OnboardingFlow({ initial }: { initial: Profile }) {
           </p>
           <h1>{STEPS[step][0]}</h1>
           <p className="subtitle">{STEPS[step][1]}</p>
+          {needsWorkspace && (
+            <p role="status">
+              Your account is ready. Finish setup to create your private
+              workspace.
+            </p>
+          )}
           <div className="onboard-content">
             {step === 0 && <AboutFields value={draft} onChange={setDraft} />}
             {step === 1 && <AreaPicker value={draft} onChange={setDraft} />}

@@ -7,7 +7,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { api, type Method } from "@/lib/api/client";
+import { api, ApiError, type Method } from "@/lib/api/client";
 import type { State, Message, Notice } from "@/lib/mock/data";
 
 /** Prototype mutation responses: the created/updated record (or a list). */
@@ -61,10 +61,20 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
       setData(d);
       setError("");
       return d;
-    } catch {
-      setError("We could not load this. Try again.");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === "workspace_required") {
+          router.replace("/onboarding?workspace=1");
+          return;
+        }
+        if (error.status === 401) {
+          router.replace("/sign-in");
+          return;
+        }
+        setError(error.message);
+      } else setError("We could not load this. Try again.");
     }
-  }, []);
+  }, [router]);
   useEffect(() => {
     alive.current = true;
     void refresh();

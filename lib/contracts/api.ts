@@ -13,6 +13,7 @@ export const ERROR_CODES = [
   "bad_request",
   "unauthenticated",
   "forbidden",
+  "workspace_required",
   "not_found",
   "conflict",
   "payload_too_large",

@@ -32,12 +32,13 @@ export function AboutFields({ value, onChange }: Edit) {
         </small>
       </label>
       <label>
-        Firm name
+        Firm name (optional)
         <input
           autoComplete="organization"
           value={value.firmName}
           onChange={(e) => onChange({ ...value, firmName: e.target.value })}
         />
+        <small>Leave blank to create a workspace in your own name.</small>
       </label>
       <label>
         Time zone
