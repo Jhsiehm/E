@@ -14,6 +14,7 @@ import type { AuthMode } from "@/lib/account/auth-mode";
 
 type AccountValue = {
   mode: AuthMode;
+  prototype: boolean;
   profile: Profile;
   layout: WorkspaceLayout;
   /** Saves on the server, then updates the sidebar and dashboard in place. */
@@ -28,10 +29,12 @@ const AccountContext = createContext<AccountValue | null>(null);
  */
 export function AccountProvider({
   mode,
+  prototype = false,
   initial,
   children,
 }: {
   mode: AuthMode;
+  prototype?: boolean;
   initial: Profile;
   children: ReactNode;
 }) {
@@ -44,8 +47,8 @@ export function AccountProvider({
     return null;
   }, []);
   const value = useMemo(
-    () => ({ mode, profile, layout, save }),
-    [mode, profile, layout, save],
+    () => ({ mode, prototype, profile, layout, save }),
+    [mode, prototype, profile, layout, save],
   );
   return (
     <AccountContext.Provider value={value}>

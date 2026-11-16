@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { handleFixture } from "@/lib/adapters/fixture/prototype-api";
 import { handleLive } from "@/lib/adapters/live";
 import { resolveDataMode } from "@/lib/runtime/data-mode";
+import { isPrototypeSession } from "@/lib/runtime/prototype";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ async function handle(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  if (resolveDataMode() !== "fixture")
+  if (!isPrototypeSession(req.cookies) && resolveDataMode() !== "fixture")
     return handleLive(req, (await params).path);
   return handleFixture(req, (await params).path);
 }

@@ -11,7 +11,7 @@ import {
 } from "@/lib/mock/data";
 /**
  * FIXTURE ADAPTER: in-memory, cookie-keyed prototype API with synthetic sample
- * data. Never used unless resolveDataMode() returns "fixture"; every response
+ * data. Used for fixture deployments or explicit public /demo sessions; every response
  * carries `X-Casevex-Data-Mode: fixture`. Moved unchanged from the former
  * app/api/[...path]/route.ts.
  */
@@ -26,6 +26,7 @@ export async function handleFixture(req: NextRequest, path: string[]) {
   const reply = (data: unknown, status = 200) => {
     const res = NextResponse.json(data, { status });
     res.headers.set(DATA_MODE_HEADER, "fixture");
+    res.headers.set("Cache-Control", "no-store");
     res.cookies.set("casevex-demo", id, {
       httpOnly: true,
       sameSite: "lax",

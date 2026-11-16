@@ -1,10 +1,12 @@
 import { resolveDataMode, resolveDeployment } from "@/lib/runtime/data-mode";
+import { isPrototypeSession, type CookieReader } from "@/lib/runtime/prototype";
 
 /**
  * How people sign in:
  * - "supabase": Supabase Auth, whenever its URL and publishable key are set.
- * - "demo": a single demo account kept in a cookie. Only when no Supabase keys
- *   are set AND the app serves fixture data; a pilot deployment never allows it.
+ * - "demo": a fictional account kept in a cookie. The default without Supabase
+ *   keys in fixture mode; also selected per request by an explicit /demo session.
+ *   A pilot deployment never allows it.
  * - "unconfigured": neither; sign-in is unavailable and says so.
  */
 export type AuthMode = "supabase" | "demo" | "unconfigured";
@@ -33,6 +35,11 @@ export function resolveAuthMode(env: Env = process.env): AuthMode {
 }
 
 export const DEMO_COOKIE = "cvx_demo";
+
+/** Explicit demo sessions take precedence over any existing real session. */
+export function resolveRequestAuthMode(store: CookieReader): AuthMode {
+  return isPrototypeSession(store) ? "demo" : resolveAuthMode();
+}
 
 /**
  * Pilot workspaces are invite-only (docs/decisions/0007-invite-only-pilot.md):

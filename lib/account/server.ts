@@ -1,5 +1,10 @@
 import { cookies } from "next/headers";
-import { DEMO_COOKIE, resolveAuthMode, type AuthMode } from "./auth-mode";
+import {
+  DEMO_COOKIE,
+  resolveRequestAuthMode,
+  type AuthMode,
+} from "./auth-mode";
+import { isPrototypeSession } from "@/lib/runtime/prototype";
 import { fromRow, sanitizeProfile, type Profile } from "./profile";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -7,6 +12,7 @@ export type Account = {
   mode: AuthMode;
   user: { id: string; email: string } | null;
   profile: Profile | null;
+  prototype?: boolean;
 };
 
 export const DEMO_USER = { id: "demo", email: "demo@casevex.example" };
@@ -30,10 +36,15 @@ export function decodeDemo(raw: string | undefined): Profile | null {
 export async function getAccount(): Promise<Account> {
   // Read cookies first so every caller renders per request, never at build time.
   const store = await cookies();
-  const mode = resolveAuthMode();
+  const mode = resolveRequestAuthMode(store);
   if (mode === "demo") {
     const profile = decodeDemo(store.get(DEMO_COOKIE)?.value);
-    return { mode, user: profile ? DEMO_USER : null, profile };
+    return {
+      mode,
+      user: profile ? DEMO_USER : null,
+      profile,
+      prototype: isPrototypeSession(store),
+    };
   }
   if (mode === "supabase") {
     const supabase = await supabaseServer();

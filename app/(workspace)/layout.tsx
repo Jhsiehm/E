@@ -25,7 +25,11 @@ export default async function WorkspaceLayout({
   const { profile } = account;
   const firstName = (profile.fullName || profile.email).split(/[\s@]/)[0];
   return (
-    <AccountProvider mode={account.mode} initial={account.profile}>
+    <AccountProvider
+      mode={account.mode}
+      prototype={account.prototype}
+      initial={account.profile}
+    >
       <IntroSplash firstName={firstName} timeZone={profile.timeZone} />
       <Suspense fallback={<div className="boot">Opening Casevex…</div>}>
         <Workspace />

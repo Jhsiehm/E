@@ -5,7 +5,8 @@
  * - Development and test builds default to "fixture".
  * - Production builds (NODE_ENV=production) default to "live" and NEVER fall
  *   back to fixtures. A production build serves fixtures only when
- *   CASEVEX_DATA_MODE=fixture is set explicitly (the public demo deployment).
+ *   CASEVEX_DATA_MODE=fixture is set explicitly. Separately, /demo can opt a
+ *   browser into isolated fixture requests via lib/runtime/prototype.ts.
  * - A pilot/customer deployment (CASEVEX_DEPLOYMENT=pilot) refuses fixture mode
  *   outright, even when CASEVEX_DATA_MODE=fixture is set.
  */
