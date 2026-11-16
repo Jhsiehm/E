@@ -15,6 +15,7 @@ import {
   type LegalModelTask,
 } from "./model";
 import type { Evidence, RetrievalResult } from "./retrieve";
+import { uniqueLimitations } from "./research-limits";
 import { checkQuote } from "./verify";
 import {
   parseDraft,
@@ -44,7 +45,6 @@ export { PROMPT_VERSION, VERIFY_PROMPT_VERSION } from "./research-prompts";
 
 export interface ResearchOptions {
   complete?: Complete;
-  /** Per-call USD ceiling. */
   /** Shared run budget (e.g. RunBudget.fromAgentProfile) or a USD ceiling for the whole run. */
   budgetUsd?: RunBudget | number;
   signal?: AbortSignal;
@@ -291,14 +291,10 @@ export async function answerQuestion(
       c.verificationStatus === "partially_supported",
   );
   const abstained = draft.insufficient || supported.length === 0;
-  // The model often restates a server limitation; list each one once.
-  const limitations = [
-    ...new Set([...draft.limitations, ...baseLimitations(retrieval)]),
-  ].filter(
-    (l, _, all) =>
-      !/subsequent treatment/i.test(l) ||
-      l === all.find((x) => /subsequent treatment/i.test(x)),
-  );
+  const limitations = uniqueLimitations([
+    ...draft.limitations,
+    ...baseLimitations(retrieval),
+  ]);
   if (claims.some((c) => c.verificationStatus === "unverified"))
     limitations.push(
       "Some points could not be verified against their sources and are marked unverified.",
