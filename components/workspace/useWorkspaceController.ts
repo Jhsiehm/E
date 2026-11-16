@@ -9,7 +9,11 @@ import {
 } from "react";
 import { api, ApiError, type Method } from "@/lib/api/client";
 import type { State, Message, Notice } from "@/lib/mock/data";
-import { appendChat, nonEmpty } from "@/components/workspace/chat-state";
+import {
+  appendChat,
+  chatErrorText,
+  nonEmpty,
+} from "@/components/workspace/chat-state";
 
 /** Prototype mutation responses: the created/updated record (or a list). */
 type MutationResult = { id: string } & Record<string, unknown>;
@@ -199,11 +203,7 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
         await refresh();
         setStream(null);
       } catch (error) {
-        notify(
-          error instanceof ApiError && error.status !== 500
-            ? error.message
-            : "Message could not be sent. Please retry.",
-        );
+        notify(chatErrorText(error));
         await refresh();
       } finally {
         setReading(false);

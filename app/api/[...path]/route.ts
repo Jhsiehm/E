@@ -5,8 +5,10 @@ import { resolveDataMode } from "@/lib/runtime/data-mode";
 import { isPrototypeSession } from "@/lib/runtime/prototype";
 
 export const dynamic = "force-dynamic";
-// Matter chat runs retrieval plus up to two model calls.
-export const maxDuration = 60;
+// Matter chat runs retrieval plus two model calls (a frontier draft that may
+// reason for a minute or more, then the support check). See
+// lib/adapters/live/chat.ts for the deadline inside this limit.
+export const maxDuration = 300;
 
 /** Dispatches the prototype API to the fixture or live adapter. */
 async function handle(
