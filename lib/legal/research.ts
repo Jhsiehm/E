@@ -122,7 +122,9 @@ function extractive(question: string, r: RetrievalResult): ResearchResult {
       analysis: claims.map((c) => ({ text: c.text, claimIds: [c.id] })),
       contraryAuthorities: [],
       limitations: [
-        "No AI model is configured; this is an extractive result.",
+        ...(abstained
+          ? []
+          : ["No AI model is configured; this is an extractive result."]),
         ...baseLimitations(r),
       ],
       nextSteps: abstained
@@ -289,7 +291,14 @@ export async function answerQuestion(
       c.verificationStatus === "partially_supported",
   );
   const abstained = draft.insufficient || supported.length === 0;
-  const limitations = [...draft.limitations, ...baseLimitations(retrieval)];
+  // The model often restates a server limitation; list each one once.
+  const limitations = [
+    ...new Set([...draft.limitations, ...baseLimitations(retrieval)]),
+  ].filter(
+    (l, _, all) =>
+      !/subsequent treatment/i.test(l) ||
+      l === all.find((x) => /subsequent treatment/i.test(x)),
+  );
   if (claims.some((c) => c.verificationStatus === "unverified"))
     limitations.push(
       "Some points could not be verified against their sources and are marked unverified.",
