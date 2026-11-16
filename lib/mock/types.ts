@@ -42,6 +42,14 @@ export type Notice = {
   title: string;
   source: string;
   detail: string;
+  /** A short, actionable overview for the inbox. */
+  summary?: string;
+  caseUpdates?: {
+    matterId: string;
+    impact: string;
+    nextStep: string;
+    target: "strategy" | "documents" | "deadlines";
+  }[];
   read: boolean;
   matterIds: string[];
   createdAt: string;

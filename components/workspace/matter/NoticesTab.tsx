@@ -23,6 +23,13 @@ export default function NoticesTab() {
               <span className="grow">
                 {n.title}
                 <small>{n.source}</small>
+                <span className="notice-summary">
+                  {n.caseUpdates?.find(
+                    (update) => update.matterId === matter.id,
+                  )?.nextStep ||
+                    n.summary ||
+                    n.detail}
+                </span>
               </span>
               <Chip>{n.read ? "Read" : "Unread"}</Chip>
             </button>

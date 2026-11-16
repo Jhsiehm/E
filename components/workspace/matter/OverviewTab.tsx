@@ -1,153 +1,67 @@
 "use client";
 import Link from "next/link";
 import Icon from "@/components/Icon";
-import { date, label } from "@/components/workspace/format";
-import { Chip, Card, Foot, Empty } from "@/components/workspace/ui";
+import { label } from "@/components/workspace/format";
+import { Card, Empty } from "@/components/workspace/ui";
 import { DeadlineList, Ruling } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
 import { useMatterScope } from "@/components/workspace/matter/useMatterScope";
 
+import CaseSummaryCard from "./CaseSummaryCard";
+import AnalysisCard from "./AnalysisCard";
+
 /** Matter overview: summary, issues, deadlines, documents. */
 export default function OverviewTab() {
-  const {
-    busy,
-    analysis,
-    setAnalysis,
-    editing,
-    setEditing,
-    summary,
-    setSummary,
-    mutate,
-    open,
-    hasImpact,
-  } = useWorkspace();
+  const { params, open, hasImpact } = useWorkspace();
   const { matter, documents, deadlines } = useMatterScope();
+  const view = params.get("view");
+  const expanded = view === "summary" || view === "analysis";
+  const viewHref = (nextView?: string) => {
+    const next = new URLSearchParams(params);
+    if (nextView) next.set("view", nextView);
+    else next.delete("view");
+    return `/matters/${matter.id}${next.size ? `?${next}` : ""}`;
+  };
+  const summaryCard = (
+    <CaseSummaryCard expandHref={expanded ? undefined : viewHref("summary")} />
+  );
+  const analysisCard = (
+    <AnalysisCard expandHref={expanded ? undefined : viewHref("analysis")} />
+  );
+  if (expanded)
+    return (
+      <div className="page-body expanded-matter-view">
+        <nav className="expanded-matter-nav" aria-label="Expanded case views">
+          <Link
+            href={viewHref("summary")}
+            aria-current={view === "summary" ? "page" : undefined}
+          >
+            Case summary
+          </Link>
+          <Link
+            href={viewHref("analysis")}
+            aria-current={view === "analysis" ? "page" : undefined}
+          >
+            Casevex analysis
+          </Link>
+          <Link href={viewHref()}>Back to overview ↙</Link>
+        </nav>
+        <div
+          className="expanded-matter-content scroll"
+          tabIndex={0}
+          aria-label="Expanded case content"
+        >
+          {view === "summary" ? summaryCard : analysisCard}
+        </div>
+      </div>
+    );
   return (
     <>
       {hasImpact(matter.id) && <Ruling />}
       <div className="page-body matter-grid">
         <div className="stack">
-          <Card
-            title="Case summary"
-            action={
-              <button
-                className="text-button"
-                onClick={() => {
-                  setSummary(matter.summary);
-                  setEditing(true);
-                }}
-              >
-                Edit
-              </button>
-            }
-          >
-            {editing ? (
-              <>
-                <textarea
-                  aria-label="Case summary"
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
-                />
-                <div className="actions">
-                  <button onClick={() => setEditing(false)}>Cancel</button>
-                  <button
-                    className="primary"
-                    disabled={busy}
-                    onClick={async () => {
-                      if (
-                        await mutate(
-                          "matters/" + matter.id,
-                          { summary },
-                          "PATCH",
-                        )
-                      )
-                        setEditing(false);
-                    }}
-                  >
-                    Save summary
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p>{matter.summary}</p>
-            )}
-            <div className="facts">
-              <div>
-                <span className="eyebrow">Role</span>
-                <p>{matter.role}</p>
-              </div>
-              <div>
-                <span className="eyebrow">Next deadline</span>
-                <p>
-                  {deadlines[0] ? date(deadlines[0].dueAt) : "Not scheduled"}
-                </p>
-              </div>
-              <div>
-                <span className="eyebrow">Status</span>
-                <p>
-                  <Chip tone="olive">{label(matter.status)}</Chip>
-                </p>
-              </div>
-            </div>
-          </Card>
-          <Card title="Casevex analysis" className="grow">
-            <div className="tabs analysis-tabs">
-              {[
-                "Recommended approach",
-                "Key authorities",
-                "Risks",
-                "Next steps",
-              ].map((t) => (
-                <button
-                  key={t}
-                  className={analysis === t ? "active" : ""}
-                  onClick={() => setAnalysis(t)}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <div className="analysis-panel scroll">
-              {analysis === "Recommended approach" ? (
-                <>
-                  <p>
-                    Begin with the disputed facts and the current procedural
-                    posture. Review the matter record and identify the evidence
-                    supporting each claim.
-                  </p>
-                  <p>
-                    {matter.id === "anderson"
-                      ? "The fictional Nexora ruling may inform the trade secret argument. Compare the sample declaration against the proposed standard."
-                      : "No matter-specific research has been verified. Add primary authority and supporting documents before drafting."}
-                  </p>
-                </>
-              ) : analysis === "Key authorities" ? (
-                <Link href="/precedents">
-                  Review saved authorities <Icon name="arrow" size={16} />
-                </Link>
-              ) : analysis === "Risks" ? (
-                <ul>
-                  <li>
-                    Sample citations and factual assumptions require attorney
-                    review.
-                  </li>
-                  <li>
-                    Jurisdiction, procedural posture, and negative treatment
-                    have not been checked.
-                  </li>
-                </ul>
-              ) : (
-                <ol>
-                  <li>Confirm the matter record and key dates.</li>
-                  <li>
-                    Review controlling authority with the assigned attorney.
-                  </li>
-                  <li>Update the strategy and prepare the next filing.</li>
-                </ol>
-              )}
-            </div>
-            <Foot />
-          </Card>
+          {summaryCard}
+          {analysisCard}
         </div>
         <div className="stack">
           <Card
