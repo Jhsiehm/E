@@ -2320,22 +2320,142 @@ button.wide {
 .auth-panel .eyebrow {
   color: var(--creme);
 }
-/* Sign-in panel art (components/account/AuthPanelArt.tsx): a canvas
-   behind the panel's text. .auth-art is the empty space above the tagline;
-   the picture centres itself there. */
-.auth-art-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
+/* Sign-in panel: Lineage (components/account/AuthPanelArt.tsx). Marbury's
+   line, a timeline, and Loper Bright quoting it, set like a printed page.
+   Pieces start hidden only while .pending is on and motion is allowed;
+   the script removes it as soon as the animations are scheduled. */
 .auth-art {
   flex: 1;
   min-height: 0;
-}
-.auth-panel > :not(canvas) {
+  display: flex;
+  align-items: center;
   position: relative;
+  padding: 8px 0 24px;
+}
+.auth-panel > * {
+  position: relative;
+}
+.lin {
+  --q: clamp(19px, min(1.95vw, 3.3vh), 29px);
+  --o: clamp(15px, min(1.3vw, 2.25vh), 19px);
+  max-width: 31em;
+  font-size: var(--q);
+}
+.lin-cite {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c3d3d8;
+}
+.lin-node .lin-cite {
+  display: block;
+}
+.lin-sub {
+  display: block;
+  margin-top: 4px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: rgba(195, 211, 216, 0.6);
+}
+.lin-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex: none;
+}
+.lin-dot-1803 {
+  background: #9fc1c9;
+}
+.lin-dot-1984 {
+  background: #7a4d66;
+}
+.lin-dot-2024 {
+  background: #a6445d;
+}
+.lin-quote {
+  margin: 0.55em 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--q);
+  line-height: 1.38;
+  color: var(--white);
+  text-indent: -0.4em;
+}
+.lin-carry {
+  background: linear-gradient(#c25a76, #c25a76) 0 100% / 100% 1.5px
+    no-repeat;
+  padding-bottom: 1px;
+}
+.lin-trail {
+  position: relative;
+  margin-top: 1.25em;
+  padding: 0.35em 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.05em;
+}
+.lin-line {
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0.4em;
+  width: 1px;
+  background: linear-gradient(
+    rgba(159, 193, 201, 0.55),
+    rgba(159, 193, 201, 0.12)
+  );
+  transform-origin: top;
+}
+.lin-node {
+  display: grid;
+  grid-template-columns: 11px minmax(0, 1fr);
+  column-gap: 20px;
+  align-items: start;
+}
+.lin-node .lin-dot {
+  margin-top: 2px;
+}
+.lin-opinion {
+  margin: 0.55em 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--o);
+  line-height: 1.5;
+  color: rgba(243, 241, 236, 0.86);
+  max-width: 24em;
+}
+.lin-target {
+  color: #e3a1b2;
+}
+.lin-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: #c25a76;
+  box-shadow: 0 0 0 4px rgba(194, 90, 118, 0.18);
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lineage.pending .lin-head,
+  .lineage.pending .lin-q-open,
+  .lineage.pending .lin-q-close,
+  .lineage.pending .lin-ch,
+  .lineage.pending .lin-node {
+    opacity: 0;
+  }
+  .lineage.pending .lin-line {
+    transform: scaleY(0);
+  }
+  .lineage.pending .lin-carry {
+    background-size: 0% 1.5px;
+  }
 }
 .auth-panel-rule {
   width: 72px;
@@ -2343,7 +2463,7 @@ button.wide {
   background: var(--creme);
   opacity: 0.55;
   transform-origin: left;
-  animation: auth-art-rule 1.2s var(--motion-ease) 3.6s both;
+  animation: auth-art-rule 1.2s var(--motion-ease) 8.2s both;
 }
 @keyframes auth-art-rule {
   from {
