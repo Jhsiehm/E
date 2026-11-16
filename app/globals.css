@@ -2442,6 +2442,42 @@ button.wide {
   opacity: 0;
   pointer-events: none;
 }
+/* The closing card. Hidden unless the animation brings it in, so reduced
+   motion keeps the Lineage page. */
+.lin-end {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 2.4vw, 32px);
+  opacity: 0;
+  pointer-events: none;
+}
+.lin-end-mark {
+  --s: clamp(64px, min(8vw, 13vh), 116px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: calc(var(--s) * 0.08);
+  width: var(--s);
+  height: var(--s);
+}
+.lin-end-mark i {
+  border-radius: calc(var(--s) * 0.035);
+}
+.lin-end-rule {
+  width: 1px;
+  height: calc(clamp(64px, min(8vw, 13vh), 116px) * 0.62);
+  background: rgba(231, 222, 205, 0.45);
+}
+.lin-end-word {
+  font-family: var(--font-serif);
+  font-size: clamp(24px, min(2.9vw, 4.6vh), 40px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1;
+}
 @media (prefers-reduced-motion: no-preference) {
   .lineage.pending .lin-head,
   .lineage.pending .lin-q-open,
@@ -2463,7 +2499,7 @@ button.wide {
   background: var(--creme);
   opacity: 0.55;
   transform-origin: left;
-  animation: auth-art-rule 1.2s var(--motion-ease) 8.2s both;
+  animation: auth-art-rule 1.2s var(--motion-ease) 16s both;
 }
 @keyframes auth-art-rule {
   from {

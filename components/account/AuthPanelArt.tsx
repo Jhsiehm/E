@@ -9,7 +9,10 @@ import { useEffect, useRef } from "react";
  * that carry forward, and a timeline draws down past Chevron (1984) to
  * Loper Bright (2024). A rose marker then travels down the line, and the 2024
  * opinion types out with Marbury's words, quoted, in rose. It plays once, about
- * eight seconds, and then rests.
+ * nine seconds, holds so it can be read, then closes the way the brand film
+ * does: the page steps back and the Casevex mark builds tile by tile, a
+ * colour wave settles into the logo, and the wordmark appears. That card is
+ * where it rests. Reduced motion shows the Lineage page instead, still.
  *
  * The finished state is plain markup, so people who ask for reduced motion
  * (or run no script) see it whole and still. Styles live in app/globals.css
@@ -43,7 +46,21 @@ const T = {
   markerFor: 1300,
   opinion: 7000,
   opinionPerChar: 17,
+  /** Time to read the finished page before the closing card. */
+  hold: 3000,
 };
+
+/* The closing card: the logo's 4x4 mark, as on navy (components/Logo.tsx). */
+const ROSE = "#a6445d";
+const PLUM = "#7a4d66";
+const TEAL = "#62929e";
+const LIGHT = "#9fc1c9";
+function restingColour(i: number) {
+  if (i % 4 === 3) return LIGHT;
+  if (i < 3) return ROSE;
+  if (i === 4 || i === 5 || i === 8) return PLUM;
+  return TEAL;
+}
 const EASE = "cubic-bezier(0.22, 0.61, 0.24, 1)";
 
 /** Marbury's sentence, one span per word and per letter for the typing. */
@@ -187,6 +204,64 @@ export default function AuthPanelArt() {
       run(ch, show, T.opinion + i * T.opinionPerChar, 90, "linear"),
     );
 
+    // The close, as in the brand film: the page steps back and the Casevex
+    // mark builds tile by tile along its diagonals, a colour wave passes
+    // through it and settles into the logo, then the wordmark appears.
+    const typed = qa(".lin-opinion .lin-ch").length;
+    const close = T.opinion + typed * T.opinionPerChar + T.hold;
+    run(
+      q(".lin"),
+      [
+        { opacity: 1, transform: "none" },
+        { opacity: 0, transform: "translateY(-10px)" },
+      ],
+      close,
+      900,
+    );
+    run(q(".lin-end"), show, close + 500, 10, "linear");
+    const tiles = qa(".lin-end-mark i");
+    tiles.forEach((tile, i) => {
+      const d = Math.floor(i / 4) + (i % 4);
+      const rest = restingColour(i);
+      run(
+        tile,
+        [
+          { transform: "scale(0)", backgroundColor: ROSE },
+          { transform: "scale(1)", backgroundColor: ROSE },
+        ],
+        close + 600 + d * 70,
+        360,
+      );
+      run(
+        tile,
+        [
+          { backgroundColor: ROSE },
+          { backgroundColor: PLUM },
+          { backgroundColor: TEAL },
+          { backgroundColor: LIGHT },
+          { backgroundColor: rest },
+        ],
+        close + 1000 + d * 110,
+        2000,
+        "ease-in-out",
+      );
+    });
+    run(
+      q(".lin-end-rule"),
+      [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }],
+      close + 2300,
+      600,
+    );
+    run(
+      q(".lin-end-word"),
+      [
+        { opacity: 0, letterSpacing: "0.32em" },
+        { opacity: 1, letterSpacing: "0.22em" },
+      ],
+      close + 2500,
+      1200,
+    );
+
     el.classList.remove("pending");
 
     return () => anims.forEach((a) => a.cancel());
@@ -194,6 +269,15 @@ export default function AuthPanelArt() {
 
   return (
     <div ref={root} className="auth-art lineage pending" aria-hidden="true">
+      <div className="lin-end">
+        <span className="lin-end-mark">
+          {Array.from({ length: 16 }, (_, i) => (
+            <i key={i} style={{ backgroundColor: restingColour(i) }} />
+          ))}
+        </span>
+        <span className="lin-end-rule" />
+        <span className="lin-end-word">Casevex</span>
+      </div>
       <div className="lin">
         <p className="lin-cite lin-head">
           <span className="lin-dot lin-dot-1803" />
