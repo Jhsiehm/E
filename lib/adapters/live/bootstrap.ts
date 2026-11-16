@@ -92,6 +92,7 @@ export async function liveBootstrap(ctx: LiveContext) {
     })),
     precedents: [],
     chats: {},
+    live: true,
     strategies: Object.fromEntries(
       (strategies.data ?? []).map((s) => [s.matter_id, s.body]),
     ),

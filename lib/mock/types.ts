@@ -66,6 +66,12 @@ export type Message = {
   role: "user" | "agent";
   text: string;
   sources?: Source[];
+  /**
+   * How an agent answer was made. Absent = a simulated demo answer;
+   * "model" = written by AI and checked against its sources;
+   * "extractive" = quoted passages only, no AI analysis.
+   */
+  mode?: "model" | "extractive";
 };
 export type Agent = {
   id: string;
@@ -110,4 +116,6 @@ export type State = {
    * mode, where sample cases are never offered.
    */
   samples?: "on" | "off";
+  /** True when the screens are backed by real data (and real research). */
+  live?: boolean;
 };

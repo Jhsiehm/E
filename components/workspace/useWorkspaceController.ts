@@ -9,6 +9,7 @@ import {
 } from "react";
 import { api, ApiError, type Method } from "@/lib/api/client";
 import type { State, Message, Notice } from "@/lib/mock/data";
+import { appendChat, nonEmpty } from "@/components/workspace/chat-state";
 
 /** Prototype mutation responses: the created/updated record (or a list). */
 type MutationResult = { id: string } & Record<string, unknown>;
@@ -57,7 +58,13 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
   const refresh = useCallback(async () => {
     try {
       const d = await api.get<State>("bootstrap");
-      setData(d);
+      // Live mode does not store conversations yet: keep this visit's chats
+      // for any matter the server sends none for.
+      setData((prev) =>
+        prev && d.live
+          ? { ...d, chats: { ...prev.chats, ...nonEmpty(d.chats) } }
+          : d,
+      );
       setError("");
       return d;
     } catch (error) {
@@ -162,29 +169,22 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
       setReading(true);
       const location = pathname;
       const user: Message = { id: crypto.randomUUID(), role: "user", text };
-      setData((d) =>
-        d
-          ? {
-              ...d,
-              chats: {
-                ...d.chats,
-                [matter.id]: [...(d.chats[matter.id] || []), user],
-              },
-            }
-          : d,
-      );
+      setData((d) => appendChat(d, matter.id, user));
       try {
         const answer = await api.post<Message>(`matters/${matter.id}/chat`, {
           text,
         });
-        await new Promise((r) =>
-          setTimeout(
-            r,
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 1700,
-          ),
-        );
+        // The simulated demo answer pauses as if reading; real research
+        // already took its time.
+        if (!answer.mode)
+          await new Promise((r) =>
+            setTimeout(
+              r,
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 0
+                : 1700,
+            ),
+          );
         setReading(false);
         const stride = window.matchMedia("(prefers-reduced-motion: reduce)")
           .matches
@@ -195,10 +195,15 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
           setStream({ ...answer, text: answer.text.slice(0, i) });
           await new Promise((r) => setTimeout(r, 32));
         }
+        setData((d) => appendChat(d, matter.id, answer));
         await refresh();
         setStream(null);
-      } catch {
-        notify("Message could not be sent. Please retry.");
+      } catch (error) {
+        notify(
+          error instanceof ApiError && error.status !== 500
+            ? error.message
+            : "Message could not be sent. Please retry.",
+        );
         await refresh();
       } finally {
         setReading(false);

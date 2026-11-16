@@ -3460,3 +3460,8 @@ html[data-intro="seen"] .intro {
     display: none;
   }
 }
+.reading-source > p.live-steps {
+  font-size: 15px;
+  font-style: normal;
+  line-height: 1.5;
+}

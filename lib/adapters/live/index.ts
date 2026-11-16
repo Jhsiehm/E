@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { liveBootstrap } from "./bootstrap";
 import { liveContext } from "./context";
+import { matterChat } from "./chat";
 import { routeDocuments } from "./document-routes";
 import {
   createMatter,
@@ -56,5 +57,7 @@ export async function handleLive(req: NextRequest, path: string[]) {
   }
   if (sub === "strategy" && (method === "GET" || method === "PATCH"))
     return matterStrategy(ctx, id, method, body);
+  if (sub === "chat")
+    return matterChat(ctx, req, id, method, body as Record<string, unknown>);
   return notBuilt();
 }

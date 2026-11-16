@@ -2,11 +2,13 @@
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import ResearchProgress from "@/components/ResearchProgress";
+import LiveResearchStatus from "@/components/LiveResearchStatus";
 import { disclaimer, TODAY } from "@/lib/mock/data";
 import { sources as sampleSources } from "@/lib/mock/data";
 import { date, download } from "@/components/workspace/format";
 import { Chip, Card, Foot, Empty } from "@/components/workspace/ui";
-import { Ruling, Answer } from "@/components/workspace/shared";
+import { Ruling } from "@/components/workspace/shared";
+import { Answer } from "@/components/workspace/Answer";
 import { useWorkspace } from "@/components/workspace/context";
 import { useMatterScope } from "@/components/workspace/matter/useMatterScope";
 
@@ -37,10 +39,12 @@ export default function ChatTab() {
               </small>
             </div>
           </div>
-          <Chip>
-            <Icon name="lock" size={12} />
-            Demo chat
-          </Chip>
+          {!data.live && (
+            <Chip>
+              <Icon name="lock" size={12} />
+              Demo chat
+            </Chip>
+          )}
         </div>
         <div className="chat-thread scroll" aria-live="polite">
           {(data.chats[matter.id] || []).map((msg) =>
@@ -54,31 +58,42 @@ export default function ChatTab() {
             ),
           )}
           {!data.chats[matter.id]?.length && !reading && (
-            <Empty text="Start a research conversation for this matter." />
-          )}
-          {reading && (
-            <ResearchProgress
-              sources={matter.id === "anderson" ? sampleSources : []}
+            <Empty
+              text={
+                data.live
+                  ? "Ask a legal question about this matter. Casevex searches court opinions and statutes, writes a short answer, and checks every point against its source."
+                  : "Start a research conversation for this matter."
+              }
             />
           )}
+          {reading &&
+            (data.live ? (
+              <LiveResearchStatus />
+            ) : (
+              <ResearchProgress
+                sources={matter.id === "anderson" ? sampleSources : []}
+              />
+            ))}
           {stream && <Answer msg={stream} />}
           <div ref={chatEnd} />
         </div>
-        <div className="suggestions">
-          {[
-            "Summarize the new ruling",
-            "What should our next filing emphasize?",
-            "Draft the argument update",
-          ].map((p) => (
-            <button
-              key={p}
-              disabled={reading || !!stream}
-              onClick={() => send(p)}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+        {!data.live && (
+          <div className="suggestions">
+            {[
+              "Summarize the new ruling",
+              "What should our next filing emphasize?",
+              "Draft the argument update",
+            ].map((p) => (
+              <button
+                key={p}
+                disabled={reading || !!stream}
+                onClick={() => send(p)}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
         <form
           className="composer"
           onSubmit={(e) => {
@@ -165,7 +180,7 @@ export default function ChatTab() {
             onClick={() =>
               download(
                 "casevex-chat-memo.txt",
-                `CASEVEX PROTOTYPE | ${matter.name}\n\n${(data.chats[matter.id] || []).map((m) => m.role.toUpperCase() + ": " + m.text).join("\n\n")}\n\n${disclaimer}`,
+                `${data.live ? "CASEVEX" : "CASEVEX PROTOTYPE"} | ${matter.name}\n\n${(data.chats[matter.id] || []).map((m) => m.role.toUpperCase() + ": " + m.text).join("\n\n")}\n\n${disclaimer}`,
               )
             }
           >

@@ -2,9 +2,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
-import type { Matter, Deadline, Doc, Message } from "@/lib/mock/data";
+import type { Matter, Deadline, Doc } from "@/lib/mock/data";
 import { date, label } from "@/components/workspace/format";
-import { Chip, Foot, Empty } from "@/components/workspace/ui";
+import { Chip, Empty } from "@/components/workspace/ui";
 import { useWorkspace } from "@/components/workspace/context";
 
 /* Composite blocks reused across screens (header, lists, rulings, answers). */
@@ -217,81 +217,5 @@ export const DocumentTable = ({ items }: { items: Doc[] }) => {
       </table>
       {!items.length && <Empty onClear={clear} />}
     </div>
-  );
-};
-
-export const sourcesFor = (msg: Message) => (
-  <>
-    {!!msg.sources?.length && (
-      <>
-        <p className="eyebrow">
-          Sources ({msg.sources.length}) · Simulated verification
-        </p>
-        <div className="sources">
-          {msg.sources
-            .filter((s) => s.verified)
-            .map((s) => (
-              <Link
-                id={`${msg.id}-source-${s.index}`}
-                className="source"
-                key={s.index}
-                href={s.href}
-              >
-                <span className="square" />
-                <span>
-                  [{s.index}] {s.title}
-                  <small>{s.meta}</small>
-                </span>
-                <Icon name="arrow" size={14} />
-              </Link>
-            ))}
-        </div>
-      </>
-    )}
-  </>
-);
-
-export const Answer = ({ msg }: { msg: Message }) => {
-  const { data, matter } = useWorkspace();
-  return (
-    <article className="answer">
-      <div className="card-head">
-        <b>
-          Casevex{" "}
-          {data.agents
-            .find((a) => a.id === matter?.assignedAgentId)
-            ?.name.toLowerCase()}{" "}
-          agent
-        </b>
-        <Chip>Simulated answer</Chip>
-      </div>
-      <p className="eyebrow rose-text">Short answer</p>
-      {msg.text.split("\n\n").map((paragraph, i) => (
-        <p key={i}>
-          {paragraph.split(/(\[\d\])/g).map((t, j) =>
-            /^\[\d\]$/.test(t) ? (
-              <button
-                key={j}
-                className="citation"
-                aria-label={"Jump to source " + t}
-                onClick={() => {
-                  const el = document.getElementById(
-                    `${msg.id}-source-${t[1]}`,
-                  );
-                  el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-                  el?.focus();
-                }}
-              >
-                {t}
-              </button>
-            ) : (
-              t
-            ),
-          )}
-        </p>
-      ))}
-      {sourcesFor(msg)}
-      <Foot />
-    </article>
   );
 };
