@@ -1,4 +1,5 @@
 import type { Deadline, Doc, Matter } from "./types";
+import { caseSummaries } from "./case-summaries";
 
 /** Sample matters, deadlines and documents. Fresh copies per call. */
 
@@ -11,8 +12,7 @@ export const seedMatters = (): Matter[] => [
     type: "Civil litigation",
     status: "active",
     role: "Plaintiff",
-    summary:
-      "Breach of contract and misappropriation of confidential information against Meridian Tech.",
+    summary: caseSummaries.anderson,
     assignedAgentId: "civil",
     documentCount: 24,
     updatedAt: "2026-11-11",
@@ -25,8 +25,7 @@ export const seedMatters = (): Matter[] => [
     type: "Trust and estate",
     status: "active",
     role: "Other",
-    summary:
-      "Administration of the Parker family trust and review of the proposed trust amendment.",
+    summary: caseSummaries.parker,
     assignedAgentId: "trust",
     documentCount: 12,
     updatedAt: "2026-11-10",
@@ -39,8 +38,7 @@ export const seedMatters = (): Matter[] => [
     type: "Corporate",
     status: "in_review",
     role: "Defendant",
-    summary:
-      "Corporate dispute concerning confidential information and contractual obligations.",
+    summary: caseSummaries.ridgeway,
     assignedAgentId: "corporate",
     documentCount: 18,
     updatedAt: "2026-11-10",
@@ -53,8 +51,7 @@ export const seedMatters = (): Matter[] => [
     type: "Civil rights",
     status: "active",
     role: "Plaintiff",
-    summary:
-      "Civil rights litigation involving municipal policies and individual claims.",
+    summary: caseSummaries.diaz,
     assignedAgentId: "civil",
     documentCount: 9,
     updatedAt: "2026-11-09",
@@ -67,8 +64,7 @@ export const seedMatters = (): Matter[] => [
     type: "Employment",
     status: "archived",
     role: "Plaintiff",
-    summary:
-      "Archived employment dispute. The matter is retained for reference.",
+    summary: caseSummaries.elmwood,
     assignedAgentId: "contract",
     documentCount: 15,
     updatedAt: "2026-11-05",

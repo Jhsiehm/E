@@ -82,7 +82,7 @@ export const Ruling = ({ compact = false }: { compact?: boolean }) => {
         <p className="eyebrow">
           New ruling{matter ? ", impact on this matter" : ""}
         </p>
-        <h2>Second Circuit narrows trade secret standard</h2>
+        <h2>Second Circuit broadens confidential-information standard</h2>
         <p>
           <i>U.S. v. Nexora Tech</i>, 138 F.4th 427 (2d Cir. 2026) · Fictional
           sample

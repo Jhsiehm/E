@@ -8,7 +8,7 @@ export const seedNotices = (): Notice[] => [
   {
     id: "n1",
     kind: "ruling",
-    title: "Second Circuit narrows trade secret standard",
+    title: "Second Circuit broadens confidential-information standard",
     source: "U.S. v. Nexora Tech · 2d Cir. · Fictional sample",
     detail:
       "Sample impact analysis: strengthens Anderson; weakens Ridgeway. Review the opinion before relying on this analysis.",
