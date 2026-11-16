@@ -5,9 +5,9 @@ test("a ruling explains different updates for each affected case", async ({
   page,
 }) => {
   await openApp(page, "/notices");
-  const notice = page
-    .locator(".notice-row")
-    .filter({ hasText: "Second Circuit narrows trade secret standard" });
+  const notice = page.locator(".notice-row").filter({
+    hasText: "Second Circuit broadens confidential-information standard",
+  });
   await expect(notice).toContainText(
     "update Anderson’s supporting argument and Ridgeway’s risk analysis",
   );
