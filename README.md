@@ -13,10 +13,29 @@ npm run dev
 
 Open http://localhost:3000. For another port: `npm run dev -- --port 3011`.
 
+## Shareable prototype
+
+Open `/demo` (production: https://casevex.vercel.app/demo) to explore a populated
+fictional account without registration. It includes five sample matters, documents,
+notices, deadlines, agents, precedents and simulated chat. The sign-in and sign-up
+screens also link to this walkthrough; the main site keeps its normal account flow.
+
+The persistent demo banner offers a tour, restart and exit. Reopening `/demo`
+starts a fresh sample workspace. Changes are temporary and isolated per browser;
+they may reset when a server instance restarts or changes. Use only sample information.
+Uploads store metadata only and research responses are simulated.
+
+Demo requests use the fixture adapter even when Supabase is configured. Existing
+real login cookies are preserved but ignored until leaving the demo; profile changes
+stay in demo cookies, database access is blocked, and live `/api/v1` research endpoints
+are unavailable. `CASEVEX_DEPLOYMENT=pilot` disables this entry point entirely.
+
+## Local data modes
+
 `npm run dev` serves synthetic sample data (fixture mode). A production build
-(`npm run build && npm start`) is **live mode by default** and answers every API
-call with `503 service_not_configured` until the real backend exists. To run the
-public demo from a production build, opt in explicitly:
+(`npm run build && npm start`) is **live mode by default** and requires backend
+configuration for real accounts. `/demo` opts in only the visiting browser. To run
+the whole local app with fixture data, opt in explicitly:
 
 ```sh
 CASEVEX_DATA_MODE=fixture npm start
@@ -64,9 +83,9 @@ Files are capped at 300 lines of code (ESLint `max-lines`, ADR 0009).
 
 Filters live in URL query parameters. Matter routes include overview, documents, research, notices, deadlines, strategy, and chat. The main ten screens are implemented; integrations/security/notification settings are explicitly planned surfaces.
 
-## Boundaries
+## Prototype boundaries
 
-All data and answers are mock. The invented Nexora authority is labeled fictional; verification flags are simulated. No real authentication, AI calls, storage, invitations, court deadlines, billing, or external integrations are active. Uploads store metadata only. Export produces text/metadata, never an original file that was not stored. Sharing previews an invitation and sends nothing. Dark preference is stored but dark styling is not implemented.
+In demo mode, all data and answers are mock. The invented Nexora authority is labeled fictional; verification flags are simulated. No real authentication, AI calls, storage, invitations, court deadlines, billing, or external integrations are active. Uploads store metadata only. Export produces text/metadata, never an original file that was not stored. Sharing previews an invitation and sends nothing. Dark preference is stored but dark styling is not implemented.
 
 Demo sessions use a separate HTTP-only cookie and a server-memory map with a 24-hour idle expiry. Data persists while that server process is alive, not across deployments, restarts, or multiple instances. Do not enter actual client information. This is not a production security boundary.
 

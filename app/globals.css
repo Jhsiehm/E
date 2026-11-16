@@ -2956,10 +2956,18 @@ html[data-intro="seen"] .intro {
   color: var(--ink);
   font-size: 14px;
 }
-.sample-banner button {
+.sample-banner button,
+.sample-banner a {
   flex: none;
   padding: 4px 10px;
   font-size: 13px;
+}
+.sample-banner a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+.sample-banner form {
+  margin: 0;
 }
 .welcome-card {
   flex: none;
@@ -3005,6 +3013,7 @@ html[data-intro="seen"] .intro {
 /* Guided tour: a corner card that leaves the screen usable. */
 .sample-banner-actions {
   display: flex;
+  align-items: center;
   flex: none;
   flex-wrap: wrap;
   gap: 8px;

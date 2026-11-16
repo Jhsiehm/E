@@ -1,7 +1,8 @@
 "use server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DEMO_COOKIE, resolveAuthMode } from "./auth-mode";
+import { DEMO_COOKIE, resolveRequestAuthMode } from "./auth-mode";
+import { PROTOTYPE_COOKIE } from "@/lib/runtime/prototype";
 import { emptyProfile, sanitizeProfile, toRow, type Profile } from "./profile";
 import { DEMO_USER, decodeDemo, encodeDemo, getAccount } from "./server";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -19,8 +20,9 @@ const demoCookie = {
 
 /** Demo mode only: signs in as the demo account (keeps an existing profile). */
 export async function demoSignIn(): Promise<void> {
-  if (resolveAuthMode() !== "demo") throw new Error("Demo sign-in is disabled");
   const store = await cookies();
+  if (resolveRequestAuthMode(store) !== "demo")
+    throw new Error("Demo sign-in is disabled");
   const existing = decodeDemo(store.get(DEMO_COOKIE)?.value);
   const profile = existing ?? emptyProfile(DEMO_USER.email);
   store.set(DEMO_COOKIE, encodeDemo(profile), demoCookie);
@@ -28,8 +30,17 @@ export async function demoSignIn(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  const mode = resolveAuthMode();
-  if (mode === "demo") (await cookies()).delete(DEMO_COOKIE);
+  const store = await cookies();
+  const mode = resolveRequestAuthMode(store);
+  if (mode === "demo") {
+    for (const name of [
+      DEMO_COOKIE,
+      PROTOTYPE_COOKIE,
+      "casevex-demo",
+      "casevex-samples",
+    ])
+      store.delete(name);
+  }
   if (mode === "supabase") await (await supabaseServer()).auth.signOut();
   redirect("/sign-in");
 }
