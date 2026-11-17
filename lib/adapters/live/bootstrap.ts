@@ -1,6 +1,7 @@
 import { fromRow } from "@/lib/account/profile";
 import { seedAgents } from "@/lib/mock/seed-feed";
 import type { State } from "@/lib/mock/types";
+import { loadAllConversations } from "./chat-history";
 import type { LiveContext } from "./context";
 import { DOCUMENT_COLUMNS, toDocument } from "./documents";
 import { MATTER_COLUMNS, toMatter, type MatterRow } from "./matter-rows";
@@ -12,10 +13,10 @@ const PROFILE_COLUMNS =
 /**
  * GET /api/bootstrap in live mode: the same shape the screens already use,
  * filled from the database. Parts not connected yet (notices,
- * precedents, chat) are empty rather than sample data.
+ * precedents) are empty rather than sample data. Chats are the person's own.
  */
 export async function liveBootstrap(ctx: LiveContext) {
-  const [profile, matters, deadlines, strategies, documents] =
+  const [profile, matters, deadlines, strategies, documents, chats] =
     await Promise.all([
       ctx.db
         .from("profiles")
@@ -44,6 +45,7 @@ export async function liveBootstrap(ctx: LiveContext) {
         .eq("workspace_id", ctx.workspaceId)
         .order("updated_at", { ascending: false })
         .limit(500),
+      loadAllConversations(ctx),
     ]);
   const failed = [profile, matters, deadlines, strategies, documents].find(
     (r) => r.error,
@@ -91,7 +93,7 @@ export async function liveBootstrap(ctx: LiveContext) {
       matterCount: counts.get(a.id) ?? 0,
     })),
     precedents: [],
-    chats: {},
+    chats,
     live: true,
     strategies: Object.fromEntries(
       (strategies.data ?? []).map((s) => [s.matter_id, s.body]),

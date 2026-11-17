@@ -1,24 +1,44 @@
 import { complete, type CompleteRequest } from "@/lib/ai";
+import { answerCaseQuestion } from "@/lib/legal/case-answer";
+import {
+  documentSources,
+  lawSources,
+  matterSource,
+  selectPassages,
+  type CaseSource,
+} from "@/lib/legal/case-passages";
+import { planCaseQuestion } from "@/lib/legal/case-plan";
 import { toChatMessage } from "@/lib/legal/chat-message";
 import { getRegistry } from "@/lib/legal/registry";
-import { answerQuestion } from "@/lib/legal/research";
 import { retrieve } from "@/lib/legal/retrieve";
 import { aiUsageHooksFor } from "@/lib/usage/ai-usage";
+import { loadCaseRecord } from "./case-context";
+import {
+  clearConversation,
+  loadConversation,
+  recentTurns,
+  saveExchange,
+} from "./chat-history";
 import type { LiveContext } from "./context";
 import { fail, fromDbError, ok } from "./respond";
 
 const MAX_QUESTION = 2000;
 /** Stop well inside the route's 300-second limit and say so plainly. */
 const DEADLINE_MS = 240_000;
+/** Law passages added next to the case's own documents. */
+const MAX_LAW = 10;
 
 /**
- * GET/POST /api/matters/:id/chat in live mode.
+ * /api/matters/:id/chat in live mode. GET is the person's own conversation
+ * on the matter; DELETE starts it over.
  *
- * POST runs real research: retrieval from the enabled legal sources, a model
- * draft that may cite only what was retrieved, then a check of every point by
- * a model from a different vendor (lib/legal/research.ts). With no AI key the
- * answer is quoted passages only. Conversations are not stored yet, so GET
- * answers an empty thread and the screen keeps the conversation for the visit.
+ * POST answers from the case itself: the case details, the text of the
+ * documents uploaded to it (read on upload, or now if still unread) and the
+ * last few turns of the conversation, so follow-ups build on earlier ones.
+ * When the question needs law, or the case has no readable documents, it
+ * also searches court opinions and statutes. The model may cite only these
+ * numbered sources, and a model from another vendor checks every point
+ * (lib/legal/case-answer.ts). The question and answer are then saved.
  */
 export async function matterChat(
   ctx: LiveContext,
@@ -27,7 +47,11 @@ export async function matterChat(
   method: string,
   body: Record<string, unknown>,
 ) {
-  if (method === "GET") return ok([]);
+  if (method === "GET") return ok(await loadConversation(ctx, id));
+  if (method === "DELETE") {
+    const error = await clearConversation(ctx, id);
+    return error ? fromDbError(error) : ok({ ok: true });
+  }
   if (method !== "POST") return fail(405, "bad_request", "Not supported.");
 
   const question = typeof body.text === "string" ? body.text.trim() : "";
@@ -38,22 +62,6 @@ export async function matterChat(
       422,
       "validation_failed",
       `Keep questions under ${MAX_QUESTION.toLocaleString("en-US")} characters.`,
-    );
-
-  const matter = await ctx.db
-    .from("matters")
-    .select("id")
-    .eq("id", id)
-    .maybeSingle();
-  if (matter.error) return fromDbError(matter.error);
-  if (!matter.data) return fail(404, "not_found", "Matter not found.");
-
-  const registry = getRegistry();
-  if (!registry.enabled.length)
-    return fail(
-      503,
-      "service_not_configured",
-      "Legal research is not switched on yet: no source of court opinions or statutes is connected.",
     );
 
   const hooks = await aiUsageHooksFor(ctx);
@@ -68,43 +76,93 @@ export async function matterChat(
   const signal = AbortSignal.any([req.signal, deadline]);
   const started = Date.now();
   const since = () => Date.now() - started;
-  let stage = "retrieve";
+  const model = async <T>(r: CompleteRequest<T>) => {
+    const t = Date.now();
+    try {
+      return await complete<T>({ ...r, onUsage: hooks.onUsage ?? r.onUsage });
+    } finally {
+      console.info("matter chat model call", {
+        task: r.task,
+        ms: Date.now() - t,
+      });
+    }
+  };
+  let stage = "case";
   try {
-    const retrieval = await retrieve(registry, { question, signal });
-    // Timings and counts only: never the question or the law.
-    console.info("matter chat retrieved", {
-      ms: since(),
-      evidence: retrieval.evidence.length,
-      providerErrors: retrieval.providerErrors.map((e) => e.provider),
-    });
-    // Nothing found because every source failed: say so instead of an empty
-    // "quoted passages" answer.
-    if (!retrieval.evidence.length && retrieval.providerErrors.length)
-      return fail(
-        503,
-        "service_unavailable",
-        "The case-law source is not responding right now (it may be busy or limiting requests). Nothing was charged. Please try again in a few minutes.",
-      );
-    stage = "answer";
-    const result = await answerQuestion(question, retrieval, {
+    const record = await loadCaseRecord(ctx, id);
+    if (!record) return fail(404, "not_found", "Matter not found.");
+    if ("error" in record)
+      return fromDbError(record.error as Parameters<typeof fromDbError>[0]);
+    const turns = recentTurns(await loadConversation(ctx, id, 8));
+
+    stage = "plan";
+    const plan = await planCaseQuestion(question, turns, {
+      complete: model,
       signal,
-      complete: async <T>(r: CompleteRequest<T>) => {
-        const t = Date.now();
-        try {
-          return await complete<T>({
-            ...r,
-            onUsage: hooks.onUsage ?? r.onUsage,
-          });
-        } finally {
-          console.info("matter chat model call", {
-            task: r.task,
-            ms: Date.now() - t,
-          });
-        }
-      },
+      matterName: record.matter.name,
     });
-    console.info("matter chat answered", { ms: since(), mode: result.mode });
-    return ok(toChatMessage(result, crypto.randomUUID()));
+    const passages = selectPassages(record.chunks, plan.question);
+    const notes = [...record.notes];
+    if (!record.documentCount)
+      notes.push(
+        "No documents are uploaded to this case yet. Upload pleadings, contracts or letters and Casevex will read them.",
+      );
+    const sources: CaseSource[] = [
+      matterSource(record.matter),
+      ...documentSources(id, passages),
+    ];
+
+    // Law when the question needs it, or when there is nothing else to go on.
+    const registry = getRegistry();
+    if (plan.searchLaw || !passages.length) {
+      stage = "retrieve";
+      if (!registry.enabled.length) {
+        if (plan.searchLaw)
+          notes.push(
+            "No source of court opinions or statutes is connected, so no case law was searched.",
+          );
+      } else {
+        const retrieval = await retrieve(registry, {
+          question: plan.lawQuery || plan.question,
+          signal,
+        });
+        console.info("matter chat retrieved", {
+          ms: since(),
+          evidence: retrieval.evidence.length,
+          providerErrors: retrieval.providerErrors.map((e) => e.provider),
+        });
+        const failed =
+          !retrieval.evidence.length && retrieval.providerErrors.length;
+        // Nothing at all to answer from: say why instead of an empty answer.
+        if (failed && !passages.length && !record.matter.summary.trim())
+          return fail(
+            503,
+            "service_unavailable",
+            "The case-law source is not responding right now (it may be busy or limiting requests). Nothing was charged. Please try again in a few minutes.",
+          );
+        if (failed)
+          notes.push(
+            "The case-law source was not responding, so no case law was searched for this answer.",
+          );
+        sources.push(...lawSources(retrieval.evidence.slice(0, MAX_LAW)));
+      }
+    }
+
+    stage = "answer";
+    const result = await answerCaseQuestion(question, sources, turns, {
+      complete: model,
+      signal,
+      notes,
+    });
+    console.info("matter chat answered", {
+      ms: since(),
+      mode: result.mode,
+      documents: passages.length,
+      law: sources.filter((s) => s.kind === "law").length,
+      turns: turns.length,
+    });
+    const answer = toChatMessage(result, crypto.randomUUID());
+    return ok(await saveExchange(ctx, id, question, answer));
   } catch (err) {
     console.error("matter chat research failed", {
       stage,
@@ -118,7 +176,7 @@ export async function matterChat(
       return fail(
         504,
         "provider_error",
-        "This question took too long to research. Try a narrower question, for example one statute or one legal issue.",
+        "This question took too long to answer. Try a narrower question, for example one document, one statute or one issue.",
       );
     return fail(
       502,
