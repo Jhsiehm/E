@@ -69,7 +69,7 @@ export interface RoutingAdapter {
   approvedForConfidential: string[];
   vendorOf(model: string): string | undefined;
   /** Task this task's model must be independent of (different vendor). */
-  independentOf(task: string): string | undefined;
+  independentOf(task: string): readonly string[];
   /** Run two calls against one shared run budget. */
   runShared?(
     reqs: RoutingRequest[],
@@ -186,7 +186,7 @@ export async function routingAdapter(): Promise<RoutingAdapter | null> {
       .filter((m) => m.maxDataClass === "confidential")
       .map((m) => m.id),
     vendorOf: (m) => ai.MODELS[m]?.vendor,
-    independentOf: (t) => ai.AI_FUNCTIONS[t].independentOf,
+    independentOf: (t) => ai.AI_FUNCTIONS[t].independentOf ?? [],
     async runShared(reqs, limitUsd, fake) {
       const budget = new ai.RunBudget(limitUsd);
       const out = [];
@@ -205,7 +205,7 @@ interface AiModule {
     {
       dataClass: "public" | "confidential";
       structuredOutput: boolean;
-      independentOf?: string;
+      independentOf?: readonly string[];
     }
   >;
   MODELS: Record<string, { id: string; maxDataClass: string; vendor: string }>;

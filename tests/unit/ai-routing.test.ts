@@ -41,16 +41,17 @@ describe("AI function registry", () => {
 
   it("shares no vendor between a check and any model of the function it checks", () => {
     for (const key of keys) {
-      const other = AI_FUNCTIONS[key].independentOf as
-        AiFunctionKey | undefined;
-      if (!other) continue;
-      const theirs = new Set(
-        resolveRoute(other, {}).specs.map((s) => s!.vendor),
-      );
-      for (const spec of resolveRoute(key, {}).specs)
-        expect(theirs.has(spec!.vendor), `${key} ${spec!.id} vs ${other}`).toBe(
-          false,
+      for (const other of (AI_FUNCTIONS[key].independentOf ??
+        []) as readonly AiFunctionKey[]) {
+        const theirs = new Set(
+          resolveRoute(other, {}).specs.map((s) => s!.vendor),
         );
+        for (const spec of resolveRoute(key, {}).specs)
+          expect(
+            theirs.has(spec!.vendor),
+            `${key} ${spec!.id} vs ${other}`,
+          ).toBe(false);
+      }
     }
   });
 
@@ -69,12 +70,20 @@ describe("AI function registry", () => {
         env({ "tier:frontier": ["google/gemini-4-carbon"] }),
       ),
     ).toThrow(/shares its vendor/);
+    // so is the document-only answer moving onto the checker's vendor
+    expect(() =>
+      resolveRoute(
+        "research.verify_support",
+        env({ "research.document_qa": "google/gemini-4-carbon" }),
+      ),
+    ).toThrow(/independent of research.document_qa/);
     expect(
       resolveRoute(
         "research.verify_support",
         env({
           "research.verify_support": "openai/gpt-6.1-terra",
           "research.draft": "anthropic/claude-opus-5.5",
+          "research.document_qa": "anthropic/claude-sonnet-5.5",
         }),
       ).chain,
     ).toEqual(["openai/gpt-6.1-terra"]);

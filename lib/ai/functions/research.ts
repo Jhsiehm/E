@@ -67,7 +67,8 @@ export const RESEARCH_FUNCTIONS = [
     tier: "reasoning",
     dataClass: "confidential",
     chain: ["google/gemini-4-hydrogen", "google/gemini-3.8-flash"],
-    independentOf: "research.draft",
+    // The checker also reviews answers drawn only from case documents.
+    independentOf: ["research.draft", "research.document_qa"],
     structuredOutput: true,
     temperature: 0,
     // One call checks every claim in the answer at once (lib/legal/research.ts).
@@ -111,6 +112,8 @@ export const RESEARCH_FUNCTIONS = [
     surfaces: ["web", "mobile"],
     phase: "P3",
     tier: "reasoning",
+    // Not the tier's Gemini fallback: the claim checker runs on Gemini.
+    chain: ["anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol"],
     dataClass: "confidential",
     structuredOutput: true,
     temperature: 0.1,

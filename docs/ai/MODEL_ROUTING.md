@@ -66,9 +66,10 @@ directly, so the text is exact. A model is only used after that:
   order. The result reports `fellBack: true` and the model actually used, so
   a fallback is never silent.
 - **Independent verification.** No model in `research.verify_support`'s
-  chain may share a vendor with any model in `research.draft`'s chain,
-  fallbacks included. `resolveRoute` throws if an override breaks this. The
-  checker therefore runs on Gemini while drafting runs on Claude or GPT.
+  chain may share a vendor with any model in `research.draft`'s or
+  `research.document_qa`'s chain, fallbacks included. `resolveRoute` throws
+  if an override breaks this. The checker therefore runs on Gemini (4
+  Hydrogen, then 3.8 Flash) while answers are drafted on Claude or GPT.
 - **Reasoning tokens.** Hidden reasoning is billed as output and counts
   against `max_tokens`. The `fast` and `bulk` tiers turn it off; `reasoning`
   and `frontier` get extra headroom (2,000 and 4,000 tokens). Models that

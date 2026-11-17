@@ -268,9 +268,9 @@ describe.skipIf(!routing)(`model routing [${THREADS.routing}]`, () => {
 });
 
 describe.skipIf(!routing)(`verifier independence [${THREADS.routing}]`, () => {
-  const pairs = (routing?.tasks ?? [])
-    .map((t) => [t, routing!.independentOf(t)] as const)
-    .filter((p): p is readonly [string, string] => !!p[1]);
+  const pairs = (routing?.tasks ?? []).flatMap((t) =>
+    routing!.independentOf(t).map((d) => [t, d] as const),
+  );
 
   it("at least one function declares an independent verifier", () => {
     expect(pairs.length).toBeGreaterThan(0);
