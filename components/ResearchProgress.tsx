@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { Source } from "@/lib/mock/data";
+import { reducedMotion } from "@/lib/account/display";
 /** The phone reference's row-per-source motif, explicitly simulated until a verifier exists. */
 export default function ResearchProgress({
   sources,
@@ -19,9 +20,7 @@ export default function ResearchProgress({
   }, []);
   useEffect(() => {
     if (paused || !count) return;
-    const reduce = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduce = reducedMotion();
     if (reduce) {
       setStep(count * 4);
       return;

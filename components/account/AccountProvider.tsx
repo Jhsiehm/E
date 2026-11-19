@@ -3,6 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -10,6 +11,7 @@ import {
 import { saveProfile } from "@/lib/account/actions";
 import { buildLayout, type WorkspaceLayout } from "@/lib/account/layout";
 import { ACCENTS, type Profile } from "@/lib/account/profile";
+import { applyDisplay } from "@/lib/account/display";
 import type { AuthMode } from "@/lib/account/auth-mode";
 
 type AccountValue = {
@@ -40,6 +42,12 @@ export function AccountProvider({
 }) {
   const [profile, setProfile] = useState(initial);
   const layout = useMemo(() => buildLayout(profile), [profile]);
+  // Display settings saved to the account win over this browser's cookie,
+  // so a new computer picks them up on the first signed-in page.
+  const display = profile.layout.display;
+  useEffect(() => {
+    if (display) applyDisplay(display);
+  }, [display]);
   const save = useCallback(async (p: Profile) => {
     const res = await saveProfile(p);
     if (!res.ok) return res.error;

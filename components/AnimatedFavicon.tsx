@@ -9,6 +9,7 @@ import {
   colourAt,
   rippleSeconds,
 } from "@/lib/favicon-mark";
+import { reducedMotion } from "@/lib/account/display";
 
 /** How many times the ripple runs each time it plays (about 4 seconds). */
 const LOOPS = 2;
@@ -22,7 +23,7 @@ const FRAME_MS = 50;
  */
 export default function AnimatedFavicon() {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotion()) return;
     // Tabs show the icon at 16 points: 32 pixels on retina, 16 elsewhere.
     const layout = window.devicePixelRatio >= 1.5 ? FINE : PIXEL;
     const { size, cell, tileRadius, boxRadius } = layout;
