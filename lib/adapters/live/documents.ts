@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import type { LiveContext } from "./context";
+import { readNewDocuments } from "./document-text";
 import { fail, fromDbError, ok } from "./respond";
 
 type Body = Record<string, unknown>;
@@ -110,12 +112,20 @@ export async function startUpload(ctx: LiveContext, body: Body) {
   });
 }
 
-/** POST /api/documents/:id/versions/:versionId/complete */
+/**
+ * POST /api/documents/:id/versions/:versionId/complete . Once the answer is
+ * sent, the site reads the file's text so the matter chat can quote it.
+ */
 export async function finishUpload(ctx: LiveContext, versionId: string) {
   const { data: id, error } = await ctx.db.rpc("finish_document_upload", {
     version_id: versionId,
   });
   if (error) return fromDbError(error);
+  after(() =>
+    readNewDocuments(ctx, { versionId }).catch((err) =>
+      console.error("document read failed", { error: (err as Error)?.name }),
+    ),
+  );
   return getDocument(ctx, id as string, 201);
 }
 

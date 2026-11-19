@@ -24,6 +24,7 @@ export default function ChatTab() {
     chatEnd,
     open,
     send,
+    clearChat,
   } = useWorkspace();
   const { matter, deadlines, agent } = useMatterScope();
   return (
@@ -45,6 +46,16 @@ export default function ChatTab() {
               Demo chat
             </Chip>
           )}
+          {data.live && !!data.chats[matter.id]?.length && (
+            <button
+              type="button"
+              className="text-button"
+              disabled={reading || !!stream}
+              onClick={() => void clearChat()}
+            >
+              Start over
+            </button>
+          )}
         </div>
         <div className="chat-thread scroll" aria-live="polite">
           {(data.chats[matter.id] || []).map((msg) =>
@@ -61,7 +72,7 @@ export default function ChatTab() {
             <Empty
               text={
                 data.live
-                  ? "Ask a legal question about this matter. Casevex searches court opinions and statutes, writes a short answer, and checks every point against its source."
+                  ? "Ask anything about this case. Casevex reads the case details and the documents uploaded here, searches court opinions when the question needs law, and remembers this conversation. Every point names the document or source it relies on."
                   : "Start a research conversation for this matter."
               }
             />

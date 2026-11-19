@@ -15,6 +15,7 @@ import {
   type LegalModelTask,
 } from "./model";
 import type { Evidence, RetrievalResult } from "./retrieve";
+import { baseLimitations } from "./research-limits";
 import { checkQuote } from "./verify";
 import { withCheckedAnswer } from "./checked-answer";
 import {
@@ -70,25 +71,6 @@ function sourceCard(e: Evidence): SourceCard {
     licenseStatus: e.authority.provenance.licenseStatus,
     text: e.passage.text,
   };
-}
-
-function baseLimitations(r: RetrievalResult): string[] {
-  const out = [
-    "Subsequent treatment (later citing, limiting or overruling decisions) has not been checked.",
-  ];
-  if (r.unresolvedCitations.length)
-    out.push(
-      `Could not resolve: ${r.unresolvedCitations.join("; ")}. These were not used.`,
-    );
-  for (const e of r.providerErrors)
-    out.push(`Source ${e.provider} was unavailable during this search.`);
-  if (r.coverage.some((c) => c.stale))
-    out.push("At least one source's coverage is degraded or stale.");
-  if (
-    r.evidence.some((e) => e.authority.provenance.licenseStatus === "synthetic")
-  )
-    out.push("Sources are synthetic fixtures, not real law.");
-  return out;
 }
 
 function extractive(r: RetrievalResult): ResearchResult {

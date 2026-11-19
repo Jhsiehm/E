@@ -49,7 +49,7 @@ export const TIERS: Record<Tier, TierSpec> = {
   reasoning: {
     tier: "reasoning",
     description: "Bounded structured legal judgment and verification.",
-    chain: ["anthropic/claude-sonnet-5.5", "google/gemini-3.1-pro-preview"],
+    chain: ["anthropic/claude-sonnet-5.5", "google/gemini-4-carbon"],
     maxUsdPerCall: 0.3,
     timeoutMs: 60_000,
     reasoning: { mode: "default", headroomTokens: 2000 },

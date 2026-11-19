@@ -14,8 +14,8 @@ export interface AiFunctionSpec {
   dataClass: DataClass;
   /** Replaces the tier chain when set. */
   chain?: readonly ModelId[];
-  /** No model in this function's chain may share a vendor with any model in that function's chain (fallbacks included). Enforced by resolveRoute. */
-  independentOf?: string;
+  /** No model in this function's chain may share a vendor with any model in those functions' chains (fallbacks included). Enforced by resolveRoute. */
+  independentOf?: readonly string[];
   structuredOutput: boolean;
   temperature: number;
   typicalInputTokens: number;

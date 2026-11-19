@@ -12,7 +12,7 @@
  * catalog before relying on the numbers.
  */
 
-export const PRICES_AS_OF = "2026-11-12";
+export const PRICES_AS_OF = "2026-11-16";
 
 /**
  * - `public`: public law and provider feeds only (opinions, statutes,
@@ -116,18 +116,43 @@ export const MODELS = {
     maxDataClass: "confidential",
     approvedProviders: ["openai", "azure"],
   },
-  "google/gemini-3.1-pro-preview": {
-    id: "google/gemini-3.1-pro-preview",
+  "google/gemini-4-carbon": {
+    id: "google/gemini-4-carbon",
     vendor: "google",
-    label: "Gemini 3.1 Pro (preview)",
+    label: "Gemini 4 Carbon",
     inputUsdPerMTok: 2,
-    outputUsdPerMTok: 12,
-    contextTokens: 1_050_000,
+    outputUsdPerMTok: 10,
+    contextTokens: 1_048_576,
     maxDataClass: "confidential",
     approvedProviders: ["google-vertex"],
     canDisableReasoning: false,
     notes:
-      "Preview model: fine for fallback and testing, not as a pinned primary.",
+      "Google's frontier Gemini 4 model. Replaced Gemini 3.1 Pro (preview) on 2026-11-16: newer, not a preview, and cheaper output.",
+  },
+  "google/gemini-4-hydrogen": {
+    id: "google/gemini-4-hydrogen",
+    vendor: "google",
+    label: "Gemini 4 Hydrogen",
+    inputUsdPerMTok: 1.5,
+    outputUsdPerMTok: 7.5,
+    contextTokens: 1_048_576,
+    maxDataClass: "confidential",
+    approvedProviders: ["google-vertex"],
+    canDisableReasoning: false,
+    notes:
+      "Gemini 4's fast workhorse. The claim checker's primary: it must be a different vendor from the drafter, and speed matters there.",
+  },
+  "google/gemini-3.8-flash": {
+    id: "google/gemini-3.8-flash",
+    vendor: "google",
+    label: "Gemini 3.8 Flash",
+    inputUsdPerMTok: 0.825,
+    outputUsdPerMTok: 4.125,
+    contextTokens: 1_048_576,
+    maxDataClass: "confidential",
+    approvedProviders: ["google-vertex"],
+    canDisableReasoning: false,
+    notes: "Cheaper Gemini fallback, and the pick for reading scanned pages.",
   },
   "google/gemini-3.5-flash-lite": {
     id: "google/gemini-3.5-flash-lite",
@@ -144,9 +169,9 @@ export const MODELS = {
     id: "deepseek/deepseek-v4.1-flash",
     vendor: "deepseek",
     label: "DeepSeek V4.1 Flash",
-    inputUsdPerMTok: 0.3,
-    outputUsdPerMTok: 1.2,
-    contextTokens: 1_050_000,
+    inputUsdPerMTok: 0.14,
+    outputUsdPerMTok: 0.42,
+    contextTokens: 1_048_576,
     maxDataClass: "public",
     notes:
       "Open-weight and very cheap. Public-data jobs only until a firm approves its hosting providers for client data.",
