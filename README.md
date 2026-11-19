@@ -30,6 +30,36 @@ real login cookies are preserved but ignored until leaving the demo; profile cha
 stay in demo cookies, database access is blocked, and live `/api/v1` research endpoints
 are unavailable. `CASEVEX_DEPLOYMENT=pilot` disables this entry point entirely.
 
+## Implementation status
+
+The demo above is simulated. Live mode (a signed-in pilot account) runs on
+Supabase and these pieces are real today:
+
+- Accounts, workspaces, matters with per-matter access, private document
+  storage with versions, and text extraction by the background worker
+  (`worker/`, Postgres job queue).
+- Legal research from the enabled public sources (CourtListener, NY
+  legislation, GovInfo; `lib/legal/registry.ts`). The matter chat
+  (`lib/adapters/live/chat.ts`) retrieves passages, asks one model to draft
+  an answer that may cite only those passages, checks every quotation
+  against its passage, and asks a model from another vendor whether each
+  cited passage supports the point (`lib/legal/research.ts`). Without an AI
+  key it returns quoted passages only.
+- **Only checked claims are stated** (`lib/legal/checked-answer.ts`). The
+  opening answer is built from the claims that passed both the quotation
+  check and the support check, word for word, each linked to its source. The
+  model's own summary, limitations and next steps are never shown. If nothing
+  passes, the answer is a fixed explanation for the specific reason (no
+  sources, no AI, the sources do not answer, the check failed, or nothing was
+  supported) with passages quoted exactly. Each source card states the
+  quotation match, the support finding and that later treatment was not
+  checked, separately.
+
+Not built yet: saved research threads (each answer lasts for the visit),
+answers from a matter's own documents, opening a cited passage in the
+original file, background research runs, and subsequent-treatment checks.
+See `docs/handoff/` for the plan.
+
 ## Local data modes
 
 `npm run dev` serves synthetic sample data (fixture mode). A production build
@@ -96,7 +126,8 @@ Demo sessions use a separate HTTP-only cookie and a server-memory map with a 24-
 - `components/workspace/`: `useWorkspaceController.ts` (client state and actions), `context.tsx` (`useWorkspace()`), `pages/` (one file per screen), `matter/` (matter header and tabs), `modals/` (one file per dialog), `shared.tsx` and `ui.tsx` (reusable blocks and primitives), `format.ts`.
 - `components/ResearchProgress.tsx`: imported motion vocabulary implemented in React.
 - `app/api/[...path]/route.ts`: dispatches to the fixture or live adapter (`lib/runtime/data-mode.ts`).
-- `lib/adapters/fixture/prototype-api.ts`: mock HTTP adapter, with 300 ms artificial latency. `lib/adapters/live.ts`: live adapter (503 until P1).
+- `lib/adapters/fixture/prototype-api.ts`: mock HTTP adapter, with 300 ms artificial latency. `lib/adapters/live/`: live adapter (Supabase).
+- `lib/legal/`: legal sources, retrieval, research drafting and checks; `checked-answer.ts` decides what an answer may state and `chat-message.ts` renders it for the chat.
 - `lib/api/client.ts`: typed fetch client (errors, retries, cursors). `lib/contracts/api.ts`: shared wire types.
 - `lib/mock/`: typed seed data and session store.
 - `tests/`: `unit/`, `contract/` (Vitest), `integration/` (node:test), `e2e/` (Playwright).

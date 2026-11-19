@@ -2,18 +2,24 @@
  * Turns a research result into the matter chat's Message: plain paragraphs
  * with [n] markers the chat already renders, plus the cited sources.
  *
- * Every point says how the independent source check came out, in words a
- * lawyer reads at a glance. Points the check says the sources contradict are
- * left out of the answer and counted under "Before you rely on this".
+ * Everything substantive comes from the checked answer (checked-answer.ts),
+ * recomputed here from the claims, so a result's stored summary, model-written
+ * limitations or model-written next steps can never reach the screen. Each
+ * source card says separately whether it was resolved, whether the quote
+ * matched, whether it supports the point, and that later treatment was not
+ * checked.
  */
 import type { Message, Source } from "@/lib/mock/types";
-import type { Claim, ResearchResult, SourceCard } from "./research-types";
+import {
+  checkAnswer,
+  type CheckedAnswer,
+  type CheckedSentence,
+  type SourceChecks,
+} from "./checked-answer";
+import { CHAT_HEADINGS } from "./chat-headings";
+import type { ResearchResult, SourceCard } from "./research-types";
 
-const NOTE: Partial<Record<Claim["verificationStatus"], string>> = {
-  partially_supported: "(The source supports this only in part.)",
-  unverified: "(Not yet confirmed against the source.)",
-  no_source: "(No source given for this point.)",
-};
+export { CHAT_HEADINGS };
 
 function meta(s: SourceCard) {
   const year = s.decisionDate?.slice(0, 4);
@@ -21,9 +27,46 @@ function meta(s: SourceCard) {
   return [s.pinpoint ?? s.citation, s.court, year].filter(Boolean).join(" · ");
 }
 
-export function toChatMessage(r: ResearchResult, id: string): Message {
-  const claims = new Map(r.claims.map((c) => [c.id, c]));
+function withheldNote(w: CheckedAnswer["withheld"]): string[] {
+  const n = (k: number, one: string, many: string) =>
+    k
+      ? [
+          `${k} drafted point${k === 1 ? " was" : "s were"} left out because ${k === 1 ? one : many}.`,
+        ]
+      : [];
+  return [
+    ...n(
+      w.contradicted,
+      "the source check found the cited source does not support it",
+      "the source check found the cited sources do not support them",
+    ),
+    ...n(
+      w.quoteMismatch,
+      "a quotation did not match the source text",
+      "their quotations did not match the source text",
+    ),
+    ...n(
+      w.noSource,
+      "no retrieved source was cited for it",
+      "no retrieved source was cited for them",
+    ),
+    ...n(
+      w.unchecked,
+      "it could not be checked against its source",
+      "they could not be checked against their sources",
+    ),
+  ];
+}
+
+export function toChatMessage(
+  r: Omit<ResearchResult, "checked">,
+  id: string,
+): Message {
+  const checked = checkAnswer(r);
   const cards = new Map(r.sources.map((s) => [s.sourceId, s]));
+  const checks = new Map<string, SourceChecks>(
+    checked.sourceChecks.map((c) => [c.sourceId, c]),
+  );
   const numbers = new Map<string, number>();
   const sources: Source[] = [];
   const cite = (sourceIds: string[]) =>
@@ -33,59 +76,76 @@ export function toChatMessage(r: ResearchResult, id: string): Message {
         if (!card) return "";
         if (!numbers.has(sid)) {
           numbers.set(sid, sources.length + 1);
+          const c = checks.get(sid);
           sources.push({
             index: sources.length + 1,
             title: card.title,
             meta: meta(card),
             href: card.url,
-            verified: true,
+            // Only true when the quote matched and the check found support.
+            verified:
+              !!c &&
+              c.support === "supports" &&
+              (c.quote === "exact" || c.quote === "close"),
+            checks: c && {
+              quote: c.quote,
+              support: c.support,
+              treatment: c.treatment,
+            },
           });
         }
         return `[${numbers.get(sid)}]`;
       })
       .join("");
+  const line = (s: CheckedSentence) =>
+    [s.text, cite(s.sourceIds)].filter(Boolean).join(" ");
 
-  let dropped = 0;
-  const point = (p: { text: string; claimIds: string[] }) => {
-    const cs = p.claimIds.map((c) => claims.get(c)).filter((c) => !!c);
-    if (cs.some((c) => c.verificationStatus === "contradicted")) {
-      dropped++;
-      return null;
-    }
-    const marks = cite(cs.flatMap((c) => c.sourceIds));
-    const note = cs.map((c) => NOTE[c.verificationStatus]).find(Boolean);
-    const mismatch = cs.some((c) =>
-      c.quotes.some((q) => q.check.status === "mismatch"),
-    );
-    return [
-      p.text.trim(),
-      marks,
-      mismatch ? "(A quotation here did not match the source text.)" : note,
-    ]
-      .filter(Boolean)
-      .join(" ");
-  };
-
-  const parts: string[] = [r.answer.summary.trim()];
-  const analysis = r.answer.analysis.map(point).filter((p) => p !== null);
-  parts.push(...analysis);
-  const contrary = r.answer.contraryAuthorities
-    .map(point)
-    .filter((p) => p !== null);
-  if (contrary.length) parts.push("Points against", ...contrary);
-
-  const cautions = [...r.answer.limitations];
-  if (dropped)
-    cautions.unshift(
-      `${dropped} point${dropped === 1 ? " was" : "s were"} left out because the source check found the cited source does not support ${dropped === 1 ? "it" : "them"}.`,
-    );
-  if (cautions.length)
-    parts.push("Before you rely on this", ...cautions.map((c) => `• ${c}`));
-  if (r.answer.nextSteps.length)
+  const parts: string[] = [];
+  if (checked.outcome === "answered") {
+    parts.push(checked.summarySentences.map(line).join(" "));
+    const more = checked.points.slice(checked.summarySentences.length);
+    if (more.length) parts.push(CHAT_HEADINGS.more, ...more.map(line));
+  } else {
+    parts.push(checked.summary);
+  }
+  if (checked.contrary.length)
+    parts.push(CHAT_HEADINGS.against, ...checked.contrary.map(line));
+  if (checked.review.length)
     parts.push(
-      "Recommended next step",
-      ...r.answer.nextSteps.map((s) => `• ${s}`),
+      CHAT_HEADINGS.review,
+      ...checked.review.map((x) =>
+        [
+          `Drafted: “${x.text}”`,
+          cite(x.sourceIds),
+          x.quoteMismatch
+            ? "Source check: a quotation did not match the source text."
+            : x.reason
+              ? `Source check: the source supports this only in part (${x.reason}).`
+              : "Source check: the source supports this only in part.",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      ),
     );
+  if (checked.excerpts.length)
+    parts.push(
+      CHAT_HEADINGS.excerpts,
+      ...checked.excerpts.map(
+        (e) =>
+          `“${e.text}” ${cite([e.sourceId])} (${cards.get(e.sourceId)?.title ?? "source"})`,
+      ),
+    );
+
+  // Limitations are shown only from a producer that wrote them server-side
+  // (withCheckedAnswer); any other producer may have passed model text.
+  const limits =
+    "checked" in r
+      ? r.answer.limitations
+      : ["Later treatment of these sources has not been checked."];
+  const cautions = [...withheldNote(checked.withheld), ...limits];
+  if (cautions.length)
+    parts.push(CHAT_HEADINGS.cautions, ...cautions.map((c) => `• ${c}`));
+  parts.push(CHAT_HEADINGS.next, ...checked.nextSteps.map((s) => `• ${s}`));
 
   return {
     id,
@@ -93,5 +153,6 @@ export function toChatMessage(r: ResearchResult, id: string): Message {
     text: parts.filter(Boolean).join("\n\n"),
     sources,
     mode: r.mode,
+    outcome: checked.outcome,
   };
 }

@@ -25,24 +25,24 @@ const claim = (
   id: string,
   sourceIds: string[],
   verificationStatus: ResearchResult["claims"][number]["verificationStatus"],
-  mismatch = false,
+  quote: "exact" | "mismatch" | null = "exact",
 ) => ({
   id,
   text: id,
   sourceIds,
   verificationStatus,
-  quotes: mismatch
+  quotes: quote
     ? [
         {
           sourceId: sourceIds[0],
           text: "q",
-          check: { status: "mismatch" } as never,
+          check: { status: quote, similarity: 1, span: null },
         },
       ]
     : [],
 });
 
-const result: ResearchResult = {
+const result: Omit<ResearchResult, "checked"> = {
   mode: "model",
   abstained: false,
   answer: {
@@ -53,32 +53,48 @@ const result: ResearchResult = {
       { text: "Point three.", claimIds: ["c3"] },
       { text: "Point four.", claimIds: ["c4"] },
     ],
-    contraryAuthorities: [{ text: "A contrary view.", claimIds: ["c5"] }],
+    contraryAuthorities: [
+      { text: "A contrary view.", claimIds: ["c5"] },
+      { text: "A checked contrary view.", claimIds: ["c6"] },
+    ],
     limitations: ["Subsequent treatment has not been checked."],
     nextSteps: ["Read Case 2 in full."],
   },
   claims: [
-    claim("c1", ["a2#p1"], "supported"),
+    { ...claim("c1", ["a2#p1"], "supported"), text: "Point one." },
     claim("c2", ["a1#p1", "a2#p1"], "unverified"),
     claim("c3", ["a3#p1"], "contradicted"),
-    claim("c4", ["a1#p1"], "supported", true),
-    claim("c5", ["a3#p1"], "partially_supported"),
+    claim("c4", ["a1#p1"], "supported", "mismatch"),
+    {
+      ...claim("c5", ["a3#p1"], "partially_supported"),
+      text: "A contrary view.",
+      supportReason: "only for written notices",
+    },
+    {
+      ...claim("c6", ["a1#p1"], "supported"),
+      text: "A checked contrary view.",
+    },
   ],
   sources: [card(1), card(2), card(3)],
   rejectedSourceRefs: [],
   modelRuns: [],
   treatmentStatus: "not_checked",
+  supportCheck: "completed",
 };
 
 describe("toChatMessage", () => {
   const msg = toChatMessage(result, "m1");
   const paras = msg.text.split("\n\n");
 
-  it("numbers sources in order of first citation and lists only cited ones", () => {
-    expect(paras[1]).toBe("Point one. [1]");
-    expect(paras[2]).toBe(
-      "Point two. [2][1] (Not yet confirmed against the source.)",
-    );
+  it("states only checked claims, never the stored summary", () => {
+    expect(paras[0]).toBe("Point one. [1]");
+    expect(msg.text).not.toContain("Reliance is not required.");
+    for (const left of ["c2", "c3", "c4"]) expect(msg.text).not.toContain(left);
+    expect(msg.outcome).toBe("answered");
+    expect(msg.mode).toBe("model");
+  });
+
+  it("numbers sources by first citation and reports each check separately", () => {
     expect(msg.sources?.map((s) => s.title)).toEqual([
       "Case 2",
       "Case 1",
@@ -89,26 +105,34 @@ describe("toChatMessage", () => {
       href: "https://example.invalid/2",
       meta: "2 Synth. at 20 · Court of Appeals · 2021",
       verified: true,
+      checks: { quote: "exact", support: "supports", treatment: "not_checked" },
     });
-    expect(msg.mode).toBe("model");
+    // Case 3 is cited only by a partly supported point: not verified.
+    expect(msg.sources?.[2]).toMatchObject({
+      verified: false,
+      checks: { support: "partial" },
+    });
   });
 
-  it("leaves out contradicted points, flags bad quotes and says why", () => {
-    expect(msg.text).not.toContain("Point three.");
-    expect(msg.text).toContain(
-      "Point four. [2] (A quotation here did not match the source text.)",
+  it("keeps checked points against, flags partial ones and counts the rest", () => {
+    const against = paras.indexOf("Points against");
+    expect(paras[against + 1]).toBe("A checked contrary view. [2]");
+    const review = paras.indexOf("Not confirmed: review before relying");
+    expect(paras[review + 1]).toBe(
+      "Drafted: “A contrary view.” [3] Source check: the source supports this only in part (only for written notices).",
     );
     const cautions = paras.indexOf("Before you rely on this");
-    expect(paras[cautions + 1]).toMatch(/^• 1 point was left out/);
+    expect(paras.slice(cautions + 1, cautions + 4)).toEqual([
+      "• 1 drafted point was left out because the source check found the cited source does not support it.",
+      "• 1 drafted point was left out because a quotation did not match the source text.",
+      "• 1 drafted point was left out because it could not be checked against its source.",
+    ]);
   });
 
-  it("keeps points against and next steps under their own headings", () => {
-    const against = paras.indexOf("Points against");
-    expect(paras[against + 1]).toBe(
-      "A contrary view. [3] (The source supports this only in part.)",
-    );
+  it("uses server-written next steps, not the model's", () => {
     expect(paras.at(-2)).toBe("Recommended next step");
-    expect(paras.at(-1)).toBe("• Read Case 2 in full.");
+    expect(paras.at(-1)).toMatch(/^• Open each cited source/);
+    expect(msg.text).not.toContain("Read Case 2 in full.");
   });
 
   it("labels a no-key answer as quoted passages", async () => {
@@ -117,7 +141,10 @@ describe("toChatMessage", () => {
     const a = await answerQuestion(q, await retrieve(reg, { question: q }));
     const m = toChatMessage(a, "m2");
     expect(m.mode).toBe("extractive");
+    expect(m.outcome).toBe("insufficient");
     expect(m.sources?.length).toBeGreaterThan(0);
+    expect(m.sources?.every((s) => !s.verified)).toBe(true);
     expect(m.text).toContain("No AI model is configured");
+    expect(m.text).toContain("Quoted passages (not conclusions)");
   });
 });
