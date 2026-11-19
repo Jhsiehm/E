@@ -46,6 +46,23 @@ describe("extractCitations", () => {
     ).toEqual(["NY CVP § 3211", "NY GBS § 349-a"]);
   });
 
+  it("reads the NY civil practice codes lawyers cite most", () => {
+    expect(
+      extractCitations(
+        "RPAPL 711, Real Prop. Actions & Proc. Law § 749, GOL 5-701, UCC 2-207, SCPA 1809, General Municipal Law § 50-e, Lien Law § 5 and Workers' Compensation Law § 11.",
+      ).map((c) => c.normalized),
+    ).toEqual([
+      "NY RPA § 711",
+      "NY RPA § 749",
+      "NY GOB § 5-701",
+      "NY UCC § 2-207",
+      "NY SCP § 1809",
+      "NY GMU § 50-e",
+      "NY LIE § 5",
+      "NY WKC § 11",
+    ]);
+  });
+
   it("ignores numbers that are not citations", () => {
     expect(extractCitations("We paid 500 dollars on 12 May 2020.")).toEqual([]);
     expect(extractCitations("Room 12 F 7")).toEqual([]);

@@ -179,7 +179,7 @@ export function promptsFor(p: Profile): string[] {
           ? practiceArea(p.primaryArea).label.toLowerCase()
           : "your practice area",
       ];
-  const court = p.jurisdictions[0] ?? "federal court";
+  const court = p.jurisdictions[0] ?? "New York";
   return PROMPT_TEMPLATES[preset].map((t, i) =>
     t.replace("{niche}", niches[i % niches.length]).replace("{court}", court),
   );

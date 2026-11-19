@@ -153,6 +153,43 @@ export const NY_LAW_IDS: Readonly<Record<string, string>> = {
   "public health": "PBH",
   educ: "EDN",
   education: "EDN",
+  // New York civil practice beyond the core codes.
+  rpapl: "RPA",
+  "real prop actions & proc": "RPA",
+  "real property actions and proceedings": "RPA",
+  rpl: "RPP",
+  gol: "GOB",
+  bcl: "BSC",
+  eptl: "EPT",
+  drl: "DOM",
+  vtl: "VAT",
+  scpa: "SCP",
+  "surr ct proc act": "SCP",
+  "surrogate's court procedure": "SCP",
+  ucc: "UCC",
+  "uniform commercial code": "UCC",
+  "workers' comp": "WKC",
+  "workers' compensation": "WKC",
+  "mult dwell": "MDW",
+  "multiple dwelling": "MDW",
+  "gen mun": "GMU",
+  "general municipal": "GMU",
+  lien: "LIE",
+  "civ rights": "CVR",
+  "civil rights": "CVR",
+  "ct cl act": "CTC",
+  "court of claims": "CTC",
+  "family ct act": "FCT",
+  "family court": "FCT",
+  "not-for-profit corp": "NPC",
+  "not-for-profit corporation": "NPC",
+  partnership: "PTR",
+  "pers prop": "PEP",
+  "personal property": "PEP",
+  "debt & cred": "DCD",
+  "debtor and creditor": "DCD",
+  "ny city civ ct act": "CCA",
+  "new york city civil court": "CCA",
 };
 
 const NY_LAW_RE = new RegExp(
@@ -166,9 +203,10 @@ const NY_LAW_RE = new RegExp(
   "gi",
 );
 
-/** Acronym forms are often written without "§": "CPLR 3211", "GBL 349". */
+/** Acronym forms are often written without "§": "CPLR 3211", "GBL 349",
+ *  "RPAPL 711", "GOL 5-701", "UCC 2-207". */
 const NY_ACRONYM_RE =
-  /\b(CPLR|GBL|CPL)\s*(?:§§?|R(?:ule)?\.?)?\s*(\d+[a-z]?(?:-[a-z0-9]+)*(?:\.\d+)?)\b/g;
+  /\b(CPLR|GBL|CPL|RPAPL|RPL|GOL|BCL|EPTL|DRL|VTL|SCPA|UCC)\s*(?:§§?|R(?:ule)?\.?)?\s*(\d+[a-z]?(?:-[a-z0-9]+)*(?:\.\d+)?)\b/g;
 
 const USC_RE =
   /\b(\d{1,2})\s+U\.?\s*S\.?\s*C\.?(?:\s*A\.?)?\s*(?:§§?|sec(?:tion)?\.?)\s*(\d+[a-z]?(?:-\d+)?)/gi;

@@ -29,12 +29,23 @@ export const PRACTICE_AREA_CATALOG = [
     label: "Civil litigation (New York)",
     preset: "litigation",
     agentStatus: "available",
+    // Every kind of civil case a New York lawyer brings or defends in state
+    // court. Research for all of them runs on the same NY courts and laws
+    // (lib/legal/jurisdictions.ts); the niche only steers the questions.
     niches: [
       "Commercial disputes",
-      "Trade secrets",
       "Breach of contract",
-      "Appeals",
+      "Personal injury and medical malpractice",
+      "Landlord-tenant",
+      "Real property and foreclosure",
+      "Insurance coverage",
+      "Employment and NY Labor Law",
+      "Consumer protection (GBL 349)",
+      "Estates and Surrogate's Court",
+      "Claims against the city or state",
+      "Trade secrets",
       "Discovery disputes",
+      "Appeals",
     ],
   },
   {

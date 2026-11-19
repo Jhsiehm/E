@@ -44,3 +44,17 @@ match the reporter pages, unknown citations come back `unresolved`.
 Court/date coverage, API limits, redistribution and storage/indexing rights,
 attribution, deletion policy, commercial use, cost, and whether it supplies any
 treatment data (none of these do; Casevex reports `not_checked`).
+
+## New York civil focus
+
+The pilot serves New York civil practice. Matter chat searches case law only in
+`NY_CIVIL_JURISDICTIONS` (`lib/legal/jurisdictions.ts`): NY state courts, the
+Second Circuit, the four NY federal district courts and the US Supreme Court.
+That keeps answers relevant and avoids reading and checking out-of-state
+opinions, which saves model cost and time on every question.
+
+NY statutes come from NY Open Legislation once `NY_OPENLEG_API_KEY` is set and
+`ny_legislation` is listed in `CASEVEX_LEGAL_PROVIDERS`. The citation parser
+recognises the codes NY civil lawyers cite most, including CPLR, GBL, GOL,
+RPAPL, RPL, BCL, EPTL, DRL, VTL, SCPA, UCC, General Municipal Law, Lien Law,
+Workers' Compensation Law and the NYC Civil Court Act.
