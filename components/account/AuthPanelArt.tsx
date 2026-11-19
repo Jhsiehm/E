@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { reducedMotion } from "@/lib/account/display";
 
 /**
  * "Lineage": the picture on the navy side of the sign-in and sign-up
@@ -113,9 +114,7 @@ export default function AuthPanelArt() {
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    const reduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduced = reducedMotion();
     if (reduced || typeof el.animate !== "function") {
       el.classList.remove("pending");
       return;

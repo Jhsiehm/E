@@ -6,6 +6,7 @@ import { Header } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
 import { useAccount } from "@/components/account/AccountProvider";
 import ProfileSettings from "@/components/account/ProfileSettings";
+import DisplaySettings from "@/components/account/DisplaySettings";
 
 /** Settings sections. */
 export default function SettingsPage() {
@@ -21,6 +22,7 @@ export default function SettingsPage() {
       <div className="tabs">
         {[
           "profile",
+          "display",
           "practice",
           "layout",
           "workspace",
@@ -33,11 +35,13 @@ export default function SettingsPage() {
             href={"/settings/" + t}
             className={section === t ? "active" : ""}
           >
-            {label(t)}
+            {t === "display" ? "Display and reading" : label(t)}
           </Link>
         ))}
       </div>
-      {["profile", "practice", "layout"].includes(section) ? (
+      {section === "display" ? (
+        <DisplaySettings />
+      ) : ["profile", "practice", "layout"].includes(section) ? (
         <ProfileSettings
           section={section as "profile" | "practice" | "layout"}
         />

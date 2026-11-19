@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { reducedMotion } from "@/lib/account/display";
 
 /**
  * Opening card ported from the phone prototype: a 4x4 mark pops in cell by
@@ -80,9 +81,7 @@ export default function IntroSplash({
       seen = !!sessionStorage.getItem(SEEN_KEY);
       sessionStorage.setItem(SEEN_KEY, "1");
     } catch {}
-    const reduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduced = reducedMotion();
     if (seen || reduced) {
       setDone(true);
       return;

@@ -14,6 +14,7 @@ import {
   chatErrorText,
   nonEmpty,
 } from "@/components/workspace/chat-state";
+import { reducedMotion } from "@/lib/account/display";
 
 /** Prototype mutation responses: the created/updated record (or a list). */
 type MutationResult = { id: string } & Record<string, unknown>;
@@ -181,19 +182,9 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
         // The simulated demo answer pauses as if reading; real research
         // already took its time.
         if (!answer.mode)
-          await new Promise((r) =>
-            setTimeout(
-              r,
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 1700,
-            ),
-          );
+          await new Promise((r) => setTimeout(r, reducedMotion() ? 0 : 1700));
         setReading(false);
-        const stride = window.matchMedia("(prefers-reduced-motion: reduce)")
-          .matches
-          ? answer.text.length + 18
-          : 18;
+        const stride = reducedMotion() ? answer.text.length + 18 : 18;
         for (let i = 0; i <= answer.text.length + stride; i += stride) {
           if (!alive.current || routeRef.current !== location) break;
           setStream({ ...answer, text: answer.text.slice(0, i) });

@@ -1,4 +1,5 @@
 import { PRACTICE_AREA_KEYS, type PracticeAreaKey } from "@/lib/practice-areas";
+import { sanitizeDisplay, type DisplayPrefs } from "./display";
 /**
  * The signed-in person's profile: identity, practice focus and layout choices.
  * Shared by the server (Supabase row / demo cookie) and the client. Holds no
@@ -79,6 +80,8 @@ export type LayoutPrefs = {
   hiddenNav?: NavKey[];
   /** Dashboard cards in order; absent = practice preset. */
   dashboardCards?: DashboardCard[];
+  /** Appearance, text size, contrast and motion (lib/account/display.ts). */
+  display?: DisplayPrefs;
 };
 
 export type Profile = {
@@ -172,6 +175,8 @@ export function sanitizeProfile(input: unknown, email = ""): Profile {
       DASHBOARD_CARDS.length,
       DASHBOARD_CARDS,
     );
+  if (rawLayout.display && typeof rawLayout.display === "object")
+    layout.display = sanitizeDisplay(rawLayout.display);
   const tz = str(o.timeZone, 64, "America/New_York");
   return {
     email: str(o.email, 254, email) || email,
