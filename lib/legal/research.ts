@@ -15,6 +15,7 @@ import {
   type LegalModelTask,
 } from "./model";
 import type { Evidence, RetrievalResult } from "./retrieve";
+import { baseLimitations, uniqueLimitations } from "./research-limits";
 import { checkQuote } from "./verify";
 import {
   parseDraft,
@@ -44,7 +45,6 @@ export { PROMPT_VERSION, VERIFY_PROMPT_VERSION } from "./research-prompts";
 
 export interface ResearchOptions {
   complete?: Complete;
-  /** Per-call USD ceiling. */
   /** Shared run budget (e.g. RunBudget.fromAgentProfile) or a USD ceiling for the whole run. */
   budgetUsd?: RunBudget | number;
   signal?: AbortSignal;
@@ -69,25 +69,6 @@ function sourceCard(e: Evidence): SourceCard {
     licenseStatus: e.authority.provenance.licenseStatus,
     text: e.passage.text,
   };
-}
-
-function baseLimitations(r: RetrievalResult): string[] {
-  const out = [
-    "Subsequent treatment (later citing, limiting or overruling decisions) has not been checked.",
-  ];
-  if (r.unresolvedCitations.length)
-    out.push(
-      `Could not resolve: ${r.unresolvedCitations.join("; ")}. These were not used.`,
-    );
-  for (const e of r.providerErrors)
-    out.push(`Source ${e.provider} was unavailable during this search.`);
-  if (r.coverage.some((c) => c.stale))
-    out.push("At least one source's coverage is degraded or stale.");
-  if (
-    r.evidence.some((e) => e.authority.provenance.licenseStatus === "synthetic")
-  )
-    out.push("Sources are synthetic fixtures, not real law.");
-  return out;
 }
 
 function extractive(question: string, r: RetrievalResult): ResearchResult {
@@ -122,7 +103,9 @@ function extractive(question: string, r: RetrievalResult): ResearchResult {
       analysis: claims.map((c) => ({ text: c.text, claimIds: [c.id] })),
       contraryAuthorities: [],
       limitations: [
-        "No AI model is configured; this is an extractive result.",
+        ...(abstained
+          ? []
+          : ["No AI model is configured; this is an extractive result."]),
         ...baseLimitations(r),
       ],
       nextSteps: abstained
@@ -289,7 +272,10 @@ export async function answerQuestion(
       c.verificationStatus === "partially_supported",
   );
   const abstained = draft.insufficient || supported.length === 0;
-  const limitations = [...draft.limitations, ...baseLimitations(retrieval)];
+  const limitations = uniqueLimitations([
+    ...draft.limitations,
+    ...baseLimitations(retrieval),
+  ]);
   if (claims.some((c) => c.verificationStatus === "unverified"))
     limitations.push(
       "Some points could not be verified against their sources and are marked unverified.",

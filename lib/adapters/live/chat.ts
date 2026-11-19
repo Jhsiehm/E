@@ -77,6 +77,14 @@ export async function matterChat(
       evidence: retrieval.evidence.length,
       providerErrors: retrieval.providerErrors.map((e) => e.provider),
     });
+    // Nothing found because every source failed: say so instead of an empty
+    // "quoted passages" answer.
+    if (!retrieval.evidence.length && retrieval.providerErrors.length)
+      return fail(
+        503,
+        "service_unavailable",
+        "The case-law source is not responding right now (it may be busy or limiting requests). Nothing was charged. Please try again in a few minutes.",
+      );
     stage = "answer";
     const result = await answerQuestion(question, retrieval, {
       signal,
@@ -104,6 +112,8 @@ export async function matterChat(
       error: (err as Error)?.name,
       code: (err as { code?: string })?.code,
     });
+    const aiSetup = aiAccountProblem(err);
+    if (aiSetup) return fail(503, "service_unavailable", aiSetup);
     if (deadline.aborted)
       return fail(
         504,
@@ -116,4 +126,20 @@ export async function matterChat(
       "Casevex could not finish this answer. Nothing was saved. Please try again.",
     );
   }
+}
+
+/**
+ * A model failure caused by the AI account (key rejected, no credits, or an
+ * account setting that leaves no model available), worded for the person.
+ */
+export function aiAccountProblem(err: unknown): string | null {
+  const e = err as { code?: string; message?: string } | null;
+  if (!e) return null;
+  if (e.code === "unauthorized")
+    return "The AI service rejected Casevex's key. Ask your administrator to check the OpenRouter key.";
+  if (e.code === "insufficient_credits")
+    return "The AI service account is out of credits. Ask your administrator to add credits on OpenRouter.";
+  if (/no endpoints found|provider key|byok/i.test(e.message ?? ""))
+    return "The AI service account is set so that no model can answer (it only allows the firm's own provider keys, and none are added). Ask your administrator to check the OpenRouter workspace settings.";
+  return null;
 }
