@@ -3636,3 +3636,65 @@ html[data-theme="dark"] .logo-paper .logo-grid i {
   flex-direction: column;
   gap: 8px;
 }
+
+/* Prepared document comparison (fictional Ellis demo) */
+.compare-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--olive);
+}
+.compare-action-card .button {
+  align-self: flex-start;
+}
+.compare-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.compare-title {
+  margin: 0;
+}
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.compare-excerpt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.compare-excerpt h3 {
+  margin: 0;
+}
+.compare-difference {
+  font-size: 17px;
+  margin: 0;
+}
+.compare-meta,
+.compare-note {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+.compare-excerpt blockquote {
+  margin: 4px 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--navy);
+  background: rgba(20, 47, 64, 0.04);
+  font-size: 16px;
+  line-height: 1.55;
+  flex: 1;
+}
+.compare-excerpt button {
+  align-self: flex-start;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+@media (max-width: 760px) {
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+}

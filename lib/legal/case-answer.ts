@@ -27,6 +27,7 @@ import type {
   ResearchResult,
   SourceCard,
 } from "./research-types";
+import { withCheckedAnswer } from "./checked-answer";
 import { checkQuote } from "./verify";
 
 export const CASE_PROMPT_VERSION = "matter-chat-answer@1";
@@ -99,7 +100,7 @@ function extractive(sources: CaseSource[], notes: string[]): ResearchResult {
       verificationStatus: "unverified",
     };
   });
-  return {
+  return withCheckedAnswer({
     mode: "extractive",
     abstained: !claims.length,
     answer: {
@@ -119,7 +120,7 @@ function extractive(sources: CaseSource[], notes: string[]): ResearchResult {
     rejectedSourceRefs: [],
     modelRuns: [],
     treatmentStatus: "not_checked",
-  };
+  });
 }
 
 export interface CaseAnswerOptions {
@@ -288,7 +289,7 @@ export async function answerCaseQuestion(
       "Citations to sources Casevex did not provide were removed.",
     );
   const abstained = draft.insufficient || !supported;
-  return {
+  return withCheckedAnswer({
     mode: "model",
     abstained,
     answer: {
@@ -309,5 +310,6 @@ export async function answerCaseQuestion(
     rejectedSourceRefs: [...rejected],
     modelRuns,
     treatmentStatus: "not_checked",
-  };
+    draftInsufficient: draft.insufficient,
+  });
 }

@@ -28,6 +28,8 @@ export type Doc = {
   /** Live mode: how far the worker has read the file (pending ... ready). */
   processing?: string;
   processingError?: string | null;
+  /** sha256 of the latest stored version (live mode only). */
+  sha256?: string | null;
 };
 export type Deadline = {
   id: string;
@@ -59,7 +61,17 @@ export type Source = {
   title: string;
   meta: string;
   href: string;
+  /**
+   * Demo: simulated. Live: true only when the quote matched and the
+   * independent check found support; see `checks` for each part.
+   */
   verified: boolean;
+  /** Live answers: each check reported separately (lib/legal/checked-answer.ts). */
+  checks?: {
+    quote: "exact" | "close" | "mismatch" | "not_quoted";
+    support: "supports" | "partial" | "does_not_support" | "not_checked";
+    treatment: "not_checked";
+  };
 };
 export type Message = {
   id: string;
@@ -72,6 +84,8 @@ export type Message = {
    * "extractive" = quoted passages only, no AI analysis.
    */
   mode?: "model" | "extractive";
+  /** Live answers: whether any checked conclusion was given. */
+  outcome?: "answered" | "insufficient";
 };
 export type Agent = {
   id: string;

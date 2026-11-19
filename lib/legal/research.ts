@@ -15,8 +15,9 @@ import {
   type LegalModelTask,
 } from "./model";
 import type { Evidence, RetrievalResult } from "./retrieve";
-import { baseLimitations, uniqueLimitations } from "./research-limits";
+import { baseLimitations } from "./research-limits";
 import { checkQuote } from "./verify";
+import { withCheckedAnswer } from "./checked-answer";
 import {
   parseDraft,
   parseVerdicts,
@@ -45,6 +46,7 @@ export { PROMPT_VERSION, VERIFY_PROMPT_VERSION } from "./research-prompts";
 
 export interface ResearchOptions {
   complete?: Complete;
+  /** Per-call USD ceiling. */
   /** Shared run budget (e.g. RunBudget.fromAgentProfile) or a USD ceiling for the whole run. */
   budgetUsd?: RunBudget | number;
   signal?: AbortSignal;
@@ -71,7 +73,7 @@ function sourceCard(e: Evidence): SourceCard {
   };
 }
 
-function extractive(question: string, r: RetrievalResult): ResearchResult {
+function extractive(r: RetrievalResult): ResearchResult {
   const sources = r.evidence.map(sourceCard);
   const claims: Claim[] = r.evidence.slice(0, 6).map((e, i) => {
     const first =
@@ -92,32 +94,26 @@ function extractive(question: string, r: RetrievalResult): ResearchResult {
       verificationStatus: "unverified",
     };
   });
-  const abstained = claims.length === 0;
-  return {
+  // Summary, excerpts and next steps come from withCheckedAnswer.
+  return withCheckedAnswer({
     mode: "extractive",
-    abstained,
+    abstained: true,
     answer: {
-      summary: abstained
-        ? "No matching passages were found in the enabled sources for this question."
-        : `The most relevant passages found for: “${question.slice(0, 200)}”. No AI analysis was run, so these are quotations, not conclusions.`,
+      summary: "",
       analysis: claims.map((c) => ({ text: c.text, claimIds: [c.id] })),
       contraryAuthorities: [],
       limitations: [
-        ...(abstained
-          ? []
-          : ["No AI model is configured; this is an extractive result."]),
+        "No AI model is configured; this is an extractive result.",
         ...baseLimitations(r),
       ],
-      nextSteps: abstained
-        ? ["Try different terms, a citation, or another jurisdiction."]
-        : ["Read the full sources and confirm how each applies to the facts."],
+      nextSteps: [],
     },
     claims,
     sources,
     rejectedSourceRefs: [],
     modelRuns: [],
     treatmentStatus: "not_checked",
-  };
+  });
 }
 
 const run = (
@@ -138,7 +134,7 @@ export async function answerQuestion(
   opts: ResearchOptions = {},
 ): Promise<ResearchResult> {
   if (!opts.complete || retrieval.evidence.length === 0)
-    return extractive(question, retrieval);
+    return extractive(retrieval);
   const complete = opts.complete;
   // One budget across the draft and the support check.
   const budgetUsd =
@@ -172,7 +168,7 @@ export async function answerQuestion(
   } catch (err) {
     // No AI key configured: still answer, extractively, and say why.
     if (err instanceof AiError && err.code === "not_configured") {
-      const r = extractive(question, retrieval);
+      const r = extractive(retrieval);
       r.answer.limitations[0] =
         "No AI model is configured (no OpenRouter/Anthropic key); this is an extractive result.";
       return r;
@@ -221,6 +217,9 @@ export async function answerQuestion(
 
   // Independent support check for claims that have sources.
   const checkable = claims.filter((c) => c.sourceIds.length);
+  let supportCheck: ResearchResult["supportCheck"] = opts.skipSupportCheck
+    ? "skipped"
+    : "failed";
   if (checkable.length && !opts.skipSupportCheck) {
     const passages = new Map(retrieval.evidence.map((e) => [e.sourceId, e]));
     const used = [...new Set(checkable.flatMap((c) => c.sourceIds))].map((id) =>
@@ -248,6 +247,7 @@ export async function answerQuestion(
         ],
       });
       modelRuns.push(run("research.verify_support", VERIFY_PROMPT_VERSION, v));
+      if (v.output.length) supportCheck = "completed";
       for (const verdict of v.output) {
         const c = checkable[Number(verdict.claim.replace(/\D/g, "")) - 1];
         if (!c) continue;
@@ -266,19 +266,12 @@ export async function answerQuestion(
     )
       c.verificationStatus = "partially_supported";
 
-  const supported = analysisClaims.filter(
-    (c) =>
-      c.verificationStatus === "supported" ||
-      c.verificationStatus === "partially_supported",
-  );
-  const abstained = draft.insufficient || supported.length === 0;
-  const limitations = uniqueLimitations([
-    ...draft.limitations,
-    ...baseLimitations(retrieval),
-  ]);
+  // The draft's own summary, limitations and next steps are not checked
+  // claim by claim, so none of them is shown (checked-answer.ts).
+  const limitations = baseLimitations(retrieval);
   if (claims.some((c) => c.verificationStatus === "unverified"))
     limitations.push(
-      "Some points could not be verified against their sources and are marked unverified.",
+      "Some drafted points could not be checked against their sources and were left out.",
     );
   if (rejected.size)
     limitations.push(
@@ -289,25 +282,25 @@ export async function answerQuestion(
       "At least one quotation did not match its source text and is flagged.",
     );
 
-  return {
+  return withCheckedAnswer({
     mode: "model",
-    abstained,
+    abstained: true,
     answer: {
-      summary: abstained
-        ? `The retrieved sources do not support a confident answer. ${draft.summary}`.trim()
-        : draft.summary,
+      summary: "",
       analysis: analysisClaims.map((c) => ({ text: c.text, claimIds: [c.id] })),
       contraryAuthorities: contraryClaims.map((c) => ({
         text: c.text,
         claimIds: [c.id],
       })),
       limitations,
-      nextSteps: draft.nextSteps,
+      nextSteps: [],
     },
     claims,
     sources: retrieval.evidence.map(sourceCard),
     rejectedSourceRefs: [...rejected],
     modelRuns,
     treatmentStatus: "not_checked",
-  };
+    supportCheck: checkable.length ? supportCheck : undefined,
+    draftInsufficient: draft.insufficient,
+  });
 }
