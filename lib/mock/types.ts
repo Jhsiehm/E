@@ -28,6 +28,8 @@ export type Doc = {
   /** Live mode: how far the worker has read the file (pending ... ready). */
   processing?: string;
   processingError?: string | null;
+  /** sha256 of the latest stored version (live mode only). */
+  sha256?: string | null;
 };
 export type Deadline = {
   id: string;
