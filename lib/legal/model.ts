@@ -18,7 +18,9 @@ export { AiError, RunBudget } from "../ai";
 
 /** Task keys the legal pipeline uses (registered in lib/ai/functions.ts). */
 export type LegalModelTask =
+  | "research.route"
   | "research.plan"
+  | "research.document_qa"
   | "research.draft"
   | "research.verify_support"
   | "research.rerank";

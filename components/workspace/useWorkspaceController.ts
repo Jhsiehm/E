@@ -62,8 +62,8 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
   const refresh = useCallback(async () => {
     try {
       const d = await api.get<State>("bootstrap");
-      // Live mode does not store conversations yet: keep this visit's chats
-      // for any matter the server sends none for.
+      // Live conversations are stored, but keep this visit's chat for any
+      // matter the server sends none for (for example if saving failed).
       setData((prev) =>
         prev && d.live
           ? { ...d, chats: { ...prev.chats, ...nonEmpty(d.chats) } }
@@ -212,6 +212,18 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
     },
     [matter, pathname, refresh, notify],
   );
+  /** Live only: forget this person's conversation on the matter. */
+  const clearChat = useCallback(async () => {
+    if (!matter || sending.current) return;
+    try {
+      await api.request("DELETE", `matters/${matter.id}/chat`);
+      setData((d) =>
+        d ? { ...d, chats: { ...d.chats, [matter.id]: [] } } : d,
+      );
+    } catch (error) {
+      notify(chatErrorText(error));
+    }
+  }, [matter, notify]);
   const prefilled = useRef("");
   useEffect(() => {
     const question = params.get("question");
@@ -293,6 +305,7 @@ export function useWorkspaceController(defaultPractice = "Civil litigation") {
     open,
     submit,
     send,
+    clearChat,
     unread,
     nameOf,
     hasImpact,
