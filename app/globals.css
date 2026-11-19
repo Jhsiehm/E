@@ -3497,6 +3497,10 @@ html[data-intro="seen"] .intro {
 .compare-excerpt h3 {
   margin: 0;
 }
+.compare-difference {
+  font-size: 17px;
+  margin: 0;
+}
 .compare-meta,
 .compare-note {
   color: var(--muted);

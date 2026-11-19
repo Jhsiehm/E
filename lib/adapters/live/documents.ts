@@ -8,7 +8,7 @@ const BUCKET = "matter-files";
 const STATUSES = ["draft", "in_review", "final"];
 
 export const DOCUMENT_COLUMNS =
-  "id, matter_id, name, ext, doc_type, status, updated_at, document_versions(size_bytes, version, processing_state, processing_error)";
+  "id, matter_id, name, ext, doc_type, status, updated_at, document_versions(size_bytes, version, processing_state, processing_error, sha256)";
 
 interface DocumentRow {
   id: string;
@@ -23,6 +23,7 @@ interface DocumentRow {
     version: number;
     processing_state: string;
     processing_error: string | null;
+    sha256?: string | null;
   }[];
 }
 
@@ -43,6 +44,7 @@ export function toDocument(r: DocumentRow) {
     status: r.status,
     processing: latest?.processing_state ?? "pending",
     processingError: latest?.processing_error ?? null,
+    sha256: latest?.sha256 ?? null,
   };
 }
 
@@ -163,23 +165,23 @@ export async function downloadLink(ctx: LiveContext, id: string) {
 }
 
 /**
- * GET /api/documents/:id/view?version= : a short-lived link that opens the
- * stored original in the browser (not as a download). With `version`, the
- * link is pinned to that exact version so a cited page cannot drift to a
- * newer upload. Storage policies still decide whether this person may read it.
+ * GET /api/documents/:id/view?sha256= : a short-lived link that opens the
+ * stored original in the browser (not as a download). With `sha256`, the
+ * link is pinned to the version with exactly that content, so a cited page
+ * cannot drift to a different upload. Storage policies still decide whether this person may read it.
  */
 export async function viewLink(
   ctx: LiveContext,
   id: string,
-  versionId: string | null,
+  sha256: string | null,
 ) {
   let query = ctx.db
     .from("document_versions")
     .select("id, object_key, mime_type")
-    .eq("document_id", id);
-  query = versionId
-    ? query.eq("id", versionId)
-    : query.order("version", { ascending: false }).limit(1);
+    .eq("document_id", id)
+    .order("version", { ascending: false })
+    .limit(1);
+  if (sha256) query = query.eq("sha256", sha256);
   const { data, error } = await query.maybeSingle();
   if (error) return fromDbError(error);
   if (!data) return fail(404, "not_found", "Document not found.");

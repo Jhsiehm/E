@@ -8,7 +8,7 @@ import { api } from "@/lib/api/client";
 import type {
   PreparedComparison,
   PreparedExcerpt,
-} from "@/lib/demo/ellis-comparison";
+} from "@/lib/demo/prepared-comparison";
 
 /** Overview entry point: one plain action, shown only on the prepared matter. */
 export function CompareAction({
@@ -19,21 +19,30 @@ export function CompareAction({
   href: string;
 }) {
   return (
-    <Card title={comparison.title} className="compare-action-card">
+    <Card title="Compare documents" className="compare-action-card">
       <p className="compare-label">{comparison.label}</p>
       <p>
-        {comparison.left.role} and {comparison.right.role.toLowerCase()}, side
-        by side, with a link to each original page.
+        The {comparison.left.role.toLowerCase()} and the{" "}
+        {comparison.right.role.toLowerCase()}, side by side, with a link to each
+        original page.
       </p>
       <Link className="button primary" href={href}>
-        Compare follow-up recommendations
+        {comparison.action}
       </Link>
     </Card>
   );
 }
 
 /** Opens the pinned original at its page in a new tab, so this view stays put. */
-function OpenOriginal({ excerpt }: { excerpt: PreparedExcerpt }) {
+function OpenOriginal({
+  excerpt,
+  documentId,
+  sha256,
+}: {
+  excerpt: PreparedExcerpt;
+  documentId: string;
+  sha256: string;
+}) {
   const { notify } = useWorkspace();
   const [opening, setOpening] = useState(false);
   return (
@@ -47,8 +56,8 @@ function OpenOriginal({ excerpt }: { excerpt: PreparedExcerpt }) {
         setOpening(true);
         try {
           const { url } = await api.get<{ url: string }>(
-            `documents/${excerpt.documentId}/view`,
-            { query: { version: excerpt.versionId } },
+            `documents/${documentId}/view`,
+            { query: { sha256 } },
           );
           const target = `${url}#page=${excerpt.page}`;
           if (tab) tab.location.href = target;
@@ -71,16 +80,25 @@ function OpenOriginal({ excerpt }: { excerpt: PreparedExcerpt }) {
   );
 }
 
-function ExcerptCard({ excerpt }: { excerpt: PreparedExcerpt }) {
+function ExcerptCard({
+  excerpt,
+  documentId,
+  sha256,
+}: {
+  excerpt: PreparedExcerpt;
+  documentId: string;
+  sha256: string;
+}) {
   return (
     <section className="card compare-excerpt" aria-label={excerpt.role}>
       <p className="eyebrow">{excerpt.role}</p>
       <h3>{excerpt.title}</h3>
       <p className="compare-meta">
         {excerpt.date ? <>{excerpt.date} · </> : null}PDF page {excerpt.page}
+        {excerpt.printedPage ? ` (printed page ${excerpt.printedPage})` : ""}
       </p>
       <blockquote>{excerpt.quote}</blockquote>
-      <OpenOriginal excerpt={excerpt} />
+      <OpenOriginal excerpt={excerpt} documentId={documentId} sha256={sha256} />
     </section>
   );
 }
@@ -88,30 +106,44 @@ function ExcerptCard({ excerpt }: { excerpt: PreparedExcerpt }) {
 /** Side-by-side view. Its place lives in the URL, so refresh and Back return here. */
 export function ComparisonView({
   comparison,
+  documentId,
+  documentName,
   backHref,
 }: {
   comparison: PreparedComparison;
+  documentId: string;
+  documentName: string;
   backHref: string;
 }) {
+  const sha256 = comparison.sha256;
   return (
     <div className="page-body compare-view">
       <nav className="expanded-matter-nav" aria-label="Comparison">
         <span className="compare-label">{comparison.label}</span>
         <Link href={backHref}>Back to overview ↙</Link>
       </nav>
-      <h2 className="compare-title">{comparison.title}</h2>
-      <div className="compare-grid">
-        <ExcerptCard excerpt={comparison.left} />
-        <ExcerptCard excerpt={comparison.right} />
-      </div>
+      <h2 className="compare-title">{comparison.action}</h2>
+      <p className="compare-meta">From {documentName}</p>
       <Card title="What differs">
-        <p>{comparison.difference}</p>
-        <p className="compare-note">
-          Excerpts were checked by hand against the original files. Timing,
-          breach and causation are not addressed here and need their own
-          evidence and attorney review.
-        </p>
+        <p className="compare-difference">{comparison.difference}</p>
       </Card>
+      <div className="compare-grid">
+        <ExcerptCard
+          excerpt={comparison.left}
+          documentId={documentId}
+          sha256={sha256}
+        />
+        <ExcerptCard
+          excerpt={comparison.right}
+          documentId={documentId}
+          sha256={sha256}
+        />
+      </div>
+      <p className="compare-note">
+        Both excerpts were checked by hand against the original file. This
+        example was prepared to show the review workflow; Casevex did not find
+        these passages on its own.
+      </p>
     </div>
   );
 }

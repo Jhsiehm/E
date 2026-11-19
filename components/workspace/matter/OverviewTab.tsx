@@ -10,7 +10,7 @@ import { useMatterScope } from "@/components/workspace/matter/useMatterScope";
 import CaseSummaryCard from "./CaseSummaryCard";
 import AnalysisCard from "./AnalysisCard";
 import { CompareAction, ComparisonView } from "./PreparedComparison";
-import { preparedComparisonFor } from "@/lib/demo/ellis-comparison";
+import { preparedComparisonFor } from "@/lib/demo/prepared-comparison";
 
 /** Matter overview: summary, issues, deadlines, documents. */
 export default function OverviewTab() {
@@ -18,10 +18,8 @@ export default function OverviewTab() {
   const { matter, documents, deadlines } = useMatterScope();
   const view = params.get("view");
   // Only the prepared demo matter has one; every other matter gets null.
-  const comparison = preparedComparisonFor(
-    matter.id,
-    documents.map((d) => d.id),
-  );
+  const prepared = preparedComparisonFor(matter.name, documents);
+  const comparison = prepared?.comparison;
   const expanded = view === "summary" || view === "analysis";
   const viewHref = (nextView?: string) => {
     const next = new URLSearchParams(params);
@@ -35,8 +33,17 @@ export default function OverviewTab() {
   const analysisCard = (
     <AnalysisCard expandHref={expanded ? undefined : viewHref("analysis")} />
   );
-  if (view === "compare" && comparison)
-    return <ComparisonView comparison={comparison} backHref={viewHref()} />;
+  if (view === "compare" && prepared)
+    return (
+      <ComparisonView
+        comparison={prepared.comparison}
+        documentId={prepared.documentId}
+        documentName={
+          documents.find((d) => d.id === prepared.documentId)?.name ?? ""
+        }
+        backHref={viewHref()}
+      />
+    );
   if (expanded)
     return (
       <div className="page-body expanded-matter-view">
@@ -74,10 +81,7 @@ export default function OverviewTab() {
         </div>
         <div className="stack">
           {comparison && (
-            <CompareAction
-              comparison={comparison}
-              href={viewHref("compare")}
-            />
+            <CompareAction comparison={comparison} href={viewHref("compare")} />
           )}
           <Card
             title="Key deadlines"

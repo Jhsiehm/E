@@ -39,10 +39,10 @@ export function routeDocuments(
   }
   if (sub === "download" && method === "GET") return downloadLink(ctx, id);
   if (sub === "view" && method === "GET") {
-    const version = req.nextUrl.searchParams.get("version");
-    if (version && !UUID.test(version))
+    const sha = req.nextUrl.searchParams.get("sha256");
+    if (sha && !/^[0-9a-f]{64}$/.test(sha))
       return fail(404, "not_found", "Document not found.");
-    return viewLink(ctx, id, version);
+    return viewLink(ctx, id, sha);
   }
   if (sub === "versions" && action === "complete" && method === "POST") {
     if (!versionId || !UUID.test(versionId))
