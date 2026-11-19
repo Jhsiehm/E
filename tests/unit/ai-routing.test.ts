@@ -41,16 +41,17 @@ describe("AI function registry", () => {
 
   it("shares no vendor between a check and any model of the function it checks", () => {
     for (const key of keys) {
-      const other = AI_FUNCTIONS[key].independentOf as
-        AiFunctionKey | undefined;
-      if (!other) continue;
-      const theirs = new Set(
-        resolveRoute(other, {}).specs.map((s) => s!.vendor),
-      );
-      for (const spec of resolveRoute(key, {}).specs)
-        expect(theirs.has(spec!.vendor), `${key} ${spec!.id} vs ${other}`).toBe(
-          false,
+      for (const other of (AI_FUNCTIONS[key].independentOf ??
+        []) as readonly AiFunctionKey[]) {
+        const theirs = new Set(
+          resolveRoute(other, {}).specs.map((s) => s!.vendor),
         );
+        for (const spec of resolveRoute(key, {}).specs)
+          expect(
+            theirs.has(spec!.vendor),
+            `${key} ${spec!.id} vs ${other}`,
+          ).toBe(false);
+      }
     }
   });
 
@@ -66,15 +67,23 @@ describe("AI function registry", () => {
     expect(() =>
       resolveRoute(
         "research.verify_support",
-        env({ "tier:frontier": ["google/gemini-3.1-pro-preview"] }),
+        env({ "tier:frontier": ["google/gemini-4-carbon"] }),
       ),
     ).toThrow(/shares its vendor/);
+    // so is the document-only answer moving onto the checker's vendor
+    expect(() =>
+      resolveRoute(
+        "research.verify_support",
+        env({ "research.document_qa": "google/gemini-4-carbon" }),
+      ),
+    ).toThrow(/independent of research.document_qa/);
     expect(
       resolveRoute(
         "research.verify_support",
         env({
           "research.verify_support": "openai/gpt-6.1-terra",
           "research.draft": "anthropic/claude-opus-5.5",
+          "research.document_qa": "anthropic/claude-sonnet-5.5",
         }),
       ).chain,
     ).toEqual(["openai/gpt-6.1-terra"]);
@@ -101,7 +110,7 @@ describe("AI function registry", () => {
     const m = [{ role: "user" as const, content: "q" }];
     await runAiFunction("research.verify_support", { messages: m }, deps);
     expect(bodies[0].reasoning).toBeUndefined();
-    expect(bodies[0].max_tokens).toBe(400 + 2000);
+    expect(bodies[0].max_tokens).toBe(1500 + 2000);
     await runAiFunction("research.route", { messages: m }, deps);
     expect(bodies[1].reasoning).toEqual({ enabled: false });
     expect(bodies[1].max_tokens).toBe(150);
@@ -152,10 +161,10 @@ describe("model overrides", () => {
   it("lets a function override beat a tier override", () => {
     const e = env({
       "tier:frontier": "openai/gpt-6.1-sol",
-      "research.draft": ["google/gemini-3.1-pro-preview"],
+      "research.draft": ["google/gemini-4-carbon"],
     });
     expect(resolveRoute("research.draft", e).chain).toEqual([
-      "google/gemini-3.1-pro-preview",
+      "google/gemini-4-carbon",
     ]);
     expect(resolveRoute("motion.draft", e).chain).toEqual([
       "openai/gpt-6.1-sol",

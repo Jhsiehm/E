@@ -12,7 +12,7 @@ Numbers for every function, and the monthly estimate, are in
 | Tier | Default models | When to use it |
 | --- | --- | --- |
 | `frontier` | Claude Opus 5.5, then GPT-6.1 Sol | Final legal reasoning and drafting an attorney reads and relies on: the research answer and motion drafts. Low volume, so the price barely matters next to the cost of a wrong answer. |
-| `reasoning` | Claude Sonnet 5.5, then Gemini 3.1 Pro | Bounded legal judgment on short structured inputs: research plans, claim verification, comparisons, deadline extraction, citation treatment, matter impact. |
+| `reasoning` | Claude Sonnet 5.5, then Gemini 4 Carbon | Bounded legal judgment on short structured inputs: research plans, claim verification, comparisons, deadline extraction, citation treatment, matter impact. |
 | `fast` | GPT-6 Luna, then Claude Haiku 5.5 | High-volume short jobs where an error is cheap or caught later: routing, reranking, titles, classification, summaries, digests. |
 | `bulk` | DeepSeek V4.1 Flash, then Qwen3.8 Flash | Public-data batch work only (provider feed triage). Never sees client data. |
 
@@ -31,6 +31,21 @@ full research run.
 Deterministic work never goes to a model: `source_exists`, `quote_matches`,
 the citation resolver, court-rule date math, ACL checks and keyword/BM25
 retrieval stay in code, per handoff 04.
+
+## Parsing uploaded documents
+
+Turning a PDF or Word file into text costs nothing and uses no model:
+`worker/extract.ts` reads the text layer with `unpdf` and the Word XML
+directly, so the text is exact. A model is only used after that:
+
+- `document.parse` (fast tier, GPT-6 Luna then Claude Haiku 5.5) reads that
+  text into fields: court, case number, parties, judge, filing date,
+  document type and the dates it mentions. About $0.001 a document.
+- Scanned PDFs have no text layer and come back empty today. Reading them
+  needs image input, which `lib/ai` does not send yet. When it does, use
+  Gemini 3.8 Flash (zero-retention on Vertex). OpenRouter's `mistral-ocr`
+  engine is cheaper ($2 per 1,000 pages) but its zero-retention terms are
+  not documented, so it is not approved for client files.
 
 ## Rules the router enforces
 
@@ -51,9 +66,10 @@ retrieval stay in code, per handoff 04.
   order. The result reports `fellBack: true` and the model actually used, so
   a fallback is never silent.
 - **Independent verification.** No model in `research.verify_support`'s
-  chain may share a vendor with any model in `research.draft`'s chain,
-  fallbacks included. `resolveRoute` throws if an override breaks this. The
-  checker therefore runs on Gemini while drafting runs on Claude or GPT.
+  chain may share a vendor with any model in `research.draft`'s or
+  `research.document_qa`'s chain, fallbacks included. `resolveRoute` throws
+  if an override breaks this. The checker therefore runs on Gemini (4
+  Hydrogen, then 3.8 Flash) while answers are drafted on Claude or GPT.
 - **Reasoning tokens.** Hidden reasoning is billed as output and counts
   against `max_tokens`. The `fast` and `bulk` tiers turn it off; `reasoning`
   and `frontier` get extra headroom (2,000 and 4,000 tokens). Models that
