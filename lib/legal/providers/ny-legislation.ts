@@ -42,6 +42,21 @@ export const NY_LAW_NAMES: Readonly<Record<string, string>> = {
   CPL: "Criminal Procedure Law",
   PBH: "Public Health Law",
   EDN: "Education Law",
+  RPA: "Real Property Actions and Proceedings Law",
+  SCP: "Surrogate's Court Procedure Act",
+  UCC: "Uniform Commercial Code",
+  WKC: "Workers' Compensation Law",
+  MDW: "Multiple Dwelling Law",
+  GMU: "General Municipal Law",
+  LIE: "Lien Law",
+  CVR: "Civil Rights Law",
+  CTC: "Court of Claims Act",
+  FCT: "Family Court Act",
+  NPC: "Not-for-Profit Corporation Law",
+  PTR: "Partnership Law",
+  PEP: "Personal Property Law",
+  DCD: "Debtor and Creditor Law",
+  CCA: "New York City Civil Court Act",
 };
 
 interface OlLawDoc {

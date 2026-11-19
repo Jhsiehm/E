@@ -9,6 +9,7 @@ import {
 } from "@/lib/legal/case-passages";
 import { planCaseQuestion } from "@/lib/legal/case-plan";
 import { toChatMessage } from "@/lib/legal/chat-message";
+import { NY_CIVIL_JURISDICTIONS } from "@/lib/legal/jurisdictions";
 import { getRegistry } from "@/lib/legal/registry";
 import { retrieve } from "@/lib/legal/retrieve";
 import { aiUsageHooksFor } from "@/lib/usage/ai-usage";
@@ -124,6 +125,7 @@ export async function matterChat(
       } else {
         const retrieval = await retrieve(registry, {
           question: plan.lawQuery || plan.question,
+          jurisdictionIds: [...NY_CIVIL_JURISDICTIONS],
           signal,
         });
         console.info("matter chat retrieved", {
