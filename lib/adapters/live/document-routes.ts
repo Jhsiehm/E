@@ -8,6 +8,7 @@ import {
   listDocuments,
   startUpload,
   updateDocument,
+  viewLink,
 } from "./documents";
 import { fail, notBuilt } from "./respond";
 
@@ -37,6 +38,12 @@ export function routeDocuments(
     return fail(405, "bad_request", "Not supported.");
   }
   if (sub === "download" && method === "GET") return downloadLink(ctx, id);
+  if (sub === "view" && method === "GET") {
+    const version = req.nextUrl.searchParams.get("version");
+    if (version && !UUID.test(version))
+      return fail(404, "not_found", "Document not found.");
+    return viewLink(ctx, id, version);
+  }
   if (sub === "versions" && action === "complete" && method === "POST") {
     if (!versionId || !UUID.test(versionId))
       return fail(404, "not_found", "Upload not found.");

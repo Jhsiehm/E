@@ -162,6 +162,40 @@ export async function downloadLink(ctx: LiveContext, id: string) {
   return ok({ url: signed.data.signedUrl, expiresInSeconds: 60 });
 }
 
+/**
+ * GET /api/documents/:id/view?version= : a short-lived link that opens the
+ * stored original in the browser (not as a download). With `version`, the
+ * link is pinned to that exact version so a cited page cannot drift to a
+ * newer upload. Storage policies still decide whether this person may read it.
+ */
+export async function viewLink(
+  ctx: LiveContext,
+  id: string,
+  versionId: string | null,
+) {
+  let query = ctx.db
+    .from("document_versions")
+    .select("id, object_key, mime_type")
+    .eq("document_id", id);
+  query = versionId
+    ? query.eq("id", versionId)
+    : query.order("version", { ascending: false }).limit(1);
+  const { data, error } = await query.maybeSingle();
+  if (error) return fromDbError(error);
+  if (!data) return fail(404, "not_found", "Document not found.");
+  const signed = await ctx.db.storage
+    .from(BUCKET)
+    .createSignedUrl(data.object_key, 300);
+  if (signed.error)
+    return fail(404, "not_found", "The file is not available yet.");
+  return ok({
+    url: signed.data.signedUrl,
+    versionId: data.id,
+    mimeType: data.mime_type,
+    expiresInSeconds: 300,
+  });
+}
+
 /** PATCH /api/documents/:id : rename or change review status. */
 export async function updateDocument(ctx: LiveContext, id: string, body: Body) {
   const patch: Record<string, string> = {};

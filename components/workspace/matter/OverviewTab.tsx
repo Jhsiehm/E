@@ -9,12 +9,19 @@ import { useMatterScope } from "@/components/workspace/matter/useMatterScope";
 
 import CaseSummaryCard from "./CaseSummaryCard";
 import AnalysisCard from "./AnalysisCard";
+import { CompareAction, ComparisonView } from "./PreparedComparison";
+import { preparedComparisonFor } from "@/lib/demo/ellis-comparison";
 
 /** Matter overview: summary, issues, deadlines, documents. */
 export default function OverviewTab() {
   const { params, open, hasImpact } = useWorkspace();
   const { matter, documents, deadlines } = useMatterScope();
   const view = params.get("view");
+  // Only the prepared demo matter has one; every other matter gets null.
+  const comparison = preparedComparisonFor(
+    matter.id,
+    documents.map((d) => d.id),
+  );
   const expanded = view === "summary" || view === "analysis";
   const viewHref = (nextView?: string) => {
     const next = new URLSearchParams(params);
@@ -28,6 +35,8 @@ export default function OverviewTab() {
   const analysisCard = (
     <AnalysisCard expandHref={expanded ? undefined : viewHref("analysis")} />
   );
+  if (view === "compare" && comparison)
+    return <ComparisonView comparison={comparison} backHref={viewHref()} />;
   if (expanded)
     return (
       <div className="page-body expanded-matter-view">
@@ -64,6 +73,12 @@ export default function OverviewTab() {
           {analysisCard}
         </div>
         <div className="stack">
+          {comparison && (
+            <CompareAction
+              comparison={comparison}
+              href={viewHref("compare")}
+            />
+          )}
           <Card
             title="Key deadlines"
             action={
