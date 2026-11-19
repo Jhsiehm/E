@@ -1,6 +1,7 @@
 /** Shapes of a research answer and of the model draft it is built from. */
 import type { QuoteCheck } from "./verify";
 import type { LegalModelTask } from "./model";
+import type { CheckedAnswer } from "./checked-answer";
 
 export type ClaimStatus =
   | "supported"
@@ -18,6 +19,12 @@ export interface Claim {
   supportReason?: string;
 }
 
+/**
+ * Legacy answer shape (03 research detail). Every field is derived from the
+ * checked answer: `summary` is eligible claim sentences or a fixed
+ * explanation, `analysis` and `contraryAuthorities` list eligible claims
+ * only, and `limitations` and `nextSteps` are written by the server.
+ */
 export interface ResearchAnswer {
   summary: string;
   analysis: { text: string; claimIds: string[] }[];
@@ -61,6 +68,15 @@ export interface ResearchResult {
   rejectedSourceRefs: string[];
   modelRuns: ModelRun[];
   treatmentStatus: "not_checked";
+  /** Whether the independent support check ran. Absent on older results. */
+  supportCheck?: "completed" | "failed" | "skipped";
+  /** The draft said the sources do not answer the question. */
+  draftInsufficient?: boolean;
+  /**
+   * The canonical answer every renderer uses (checked-answer.ts). Renderers
+   * recompute it from `claims` rather than trust stored text.
+   */
+  checked: CheckedAnswer;
 }
 
 // --- model output shapes, validated by hand (no schema dependency) ----------

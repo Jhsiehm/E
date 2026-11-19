@@ -4,6 +4,24 @@ import Icon from "@/components/Icon";
 import type { Message } from "@/lib/mock/data";
 import { Chip, Foot } from "@/components/workspace/ui";
 import { useWorkspace } from "@/components/workspace/context";
+import { CHAT_HEADINGS } from "@/lib/legal/chat-headings";
+
+type Checks = NonNullable<Message["sources"]>[number]["checks"];
+const QUOTE = {
+  exact: "Quote matches",
+  close: "Quote nearly matches",
+  mismatch: "Quote does not match",
+  not_quoted: "Not quoted",
+} as const;
+const SUPPORT = {
+  supports: "supports the point",
+  partial: "supports it only in part",
+  does_not_support: "does not support the point",
+  not_checked: "support not checked",
+} as const;
+/** Each check in words; later treatment is never implied. */
+const checkLine = (c: NonNullable<Checks>) =>
+  `${QUOTE[c.quote]} · ${SUPPORT[c.support]} · Later treatment not checked`;
 
 /** A research answer in the matter chat, simulated (demo) or real (live). */
 export const sourcesFor = (msg: Message) => (
@@ -16,7 +34,9 @@ export const sourcesFor = (msg: Message) => (
         </p>
         <div className="sources">
           {msg.sources
-            .filter((s) => s.verified)
+            // Demo cards carry a simulated flag; live cards always show
+            // and state each check instead.
+            .filter((s) => s.checks || s.verified)
             .map((s) => (
               <Link
                 id={`${msg.id}-source-${s.index}`}
@@ -31,6 +51,7 @@ export const sourcesFor = (msg: Message) => (
                 <span>
                   [{s.index}] {s.title}
                   <small>{s.meta}</small>
+                  {s.checks && <small>{checkLine(s.checks)}</small>}
                 </span>
                 <Icon name="arrow" size={14} />
               </Link>
@@ -42,11 +63,7 @@ export const sourcesFor = (msg: Message) => (
 );
 
 /** Section labels the live research answer uses (lib/legal/chat-message.ts). */
-const HEADINGS = new Set([
-  "Points against",
-  "Before you rely on this",
-  "Recommended next step",
-]);
+const HEADINGS = new Set<string>(Object.values(CHAT_HEADINGS));
 
 export const Answer = ({ msg }: { msg: Message }) => {
   const { data, matter } = useWorkspace();
@@ -60,15 +77,25 @@ export const Answer = ({ msg }: { msg: Message }) => {
             ?.name.toLowerCase()}{" "}
           agent
         </b>
-        <Chip tone={msg.mode === "model" ? "olive" : ""}>
+        <Chip
+          tone={
+            msg.mode === "model" && msg.outcome !== "insufficient"
+              ? "olive"
+              : ""
+          }
+        >
           {msg.mode === "model"
-            ? "Checked against sources"
+            ? msg.outcome === "insufficient"
+              ? "No checked conclusion"
+              : "Checked against sources"
             : msg.mode === "extractive"
               ? "Quoted passages only"
               : "Simulated answer"}
         </Chip>
       </div>
-      <p className="eyebrow rose-text">Short answer</p>
+      <p className="eyebrow rose-text">
+        {msg.outcome === "insufficient" ? "What Casevex found" : "Short answer"}
+      </p>
       {msg.text.split("\n\n").map((paragraph, i) =>
         HEADINGS.has(paragraph) ? (
           <p key={i} className="eyebrow">

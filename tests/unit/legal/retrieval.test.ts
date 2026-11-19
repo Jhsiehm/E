@@ -238,7 +238,10 @@ describe("answerQuestion", () => {
     });
     const a = await answerQuestion(question, r, { complete });
     expect(a.abstained).toBe(true);
-    expect(a.answer.summary).toMatch(/do not support a confident answer/);
+    expect(a.checked.reason).toBe("model_insufficient");
+    // Fixed wording; the draft's own summary is never shown.
+    expect(a.answer.summary).toMatch(/do not answer this question/);
+    expect(a.answer.summary).not.toContain("Not addressed.");
   });
 
   it("fences source text so it cannot close the source block", async () => {
