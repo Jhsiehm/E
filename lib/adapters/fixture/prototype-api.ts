@@ -3,8 +3,7 @@ import { getState } from "@/lib/mock/store";
 import { DATA_MODE_HEADER } from "@/lib/runtime/data-mode";
 import { workspaceAction } from "./samples";
 import {
-  sampleAnswer,
-  sources,
+  demoAnswer,
   type Matter,
   type Doc,
   type Message,
@@ -85,11 +84,7 @@ export async function handleFixture(req: NextRequest, path: string[]) {
             const answer: Message = {
               id: crypto.randomUUID(),
               role: "agent",
-              text:
-                m.id === "anderson"
-                  ? sampleAnswer
-                  : `This is a simulated research response for ${m.name}. No live legal research was performed.\n\nStart by reviewing the matter summary and available documents. Identify the issue, relevant jurisdiction, and supporting authority before drafting.\n\nRecommended next step\nAsk the assigned attorney to confirm the relevant facts and add primary authorities to this matter.`,
-              sources: m.id === "anderson" ? sources : [],
+              ...demoAnswer(m, body.text),
             };
             s.chats[m.id].push(answer);
             return reply(answer);

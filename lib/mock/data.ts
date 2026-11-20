@@ -9,7 +9,13 @@ import {
 
 export type * from "./types";
 
-export { TODAY, disclaimer, sampleAnswer, sources } from "./samples";
+export {
+  TODAY,
+  demoAnswer,
+  disclaimer,
+  sampleAnswer,
+  sources,
+} from "./samples";
 
 const DEMO_ME: State["me"] = {
   name: "Jordan Wells",
