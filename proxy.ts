@@ -21,6 +21,9 @@ export async function proxy(request: NextRequest) {
   // /demo owns its deployment gate and creates only fictional session data.
   // It must work even if the live authentication provider is unavailable.
   if (pathname === "/demo") return NextResponse.next({ request });
+  // Public court records bundled for the demo: static, read-only, no session.
+  if (/^\/court-records\/[\w.-]+\.pdf$/.test(pathname))
+    return NextResponse.next({ request });
   const isPublic = PUBLIC.some((p) => pathname === p || pathname.startsWith(p));
   const prototype = isPrototypeSession(request.cookies);
   const mode = resolveRequestAuthMode(request.cookies);

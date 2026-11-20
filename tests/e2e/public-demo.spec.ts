@@ -17,9 +17,9 @@ test("public demo opens a complete sample workspace without signup", async ({
   ).toBeVisible();
   expect((await pageOverflow(page)).horizontal).toBeLessThanOrEqual(1);
   await openApp(page, "/matters");
-  await expect(page.locator("tbody tr")).toHaveCount(5);
+  await expect(page.locator("tbody tr")).toHaveCount(6);
   await openApp(page, "/documents");
-  await expect(page.locator("tbody tr")).toHaveCount(5);
+  await expect(page.locator("tbody tr")).toHaveCount(7);
   await openApp(page, "/matters/anderson/chat");
   await page.getByRole("button", { name: "Summarize the new ruling" }).click();
   await expect(page.locator(".answer").last()).toContainText(
@@ -37,11 +37,11 @@ test("demo can restart after edits and exit to normal sign-in", async ({
   });
   expect(created.status()).toBe(201);
   await openApp(page, "/matters");
-  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await expect(page.locator("tbody tr")).toHaveCount(7);
   await page.getByRole("link", { name: "Restart demo" }).click();
   await expect(page).toHaveURL(/\/$/);
   await openApp(page, "/matters");
-  await expect(page.locator("tbody tr")).toHaveCount(5);
+  await expect(page.locator("tbody tr")).toHaveCount(6);
   await page.getByRole("button", { name: "Exit demo" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect(

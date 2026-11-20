@@ -1,6 +1,8 @@
 import { agentForPracticeArea, statusForPracticeArea } from "@/lib/agents";
 import { sampleAnswer, sources } from "./samples";
 import type { Agent, Message, Notice, Precedent } from "./types";
+import { COURT_RECORDS, type CourtRecordId } from "@/lib/demo/court-records";
+import { CONNECTED, type ConnectedId } from "@/lib/demo/connected-authorities";
 
 /** Sample notices, agents, precedents and chats. Fresh copies per call. */
 
@@ -58,6 +60,30 @@ export const seedNotices = (): Notice[] => [
     read: false,
     matterIds: ["ridgeway"],
     createdAt: "2026-11-11T13:00:00Z",
+  },
+  {
+    id: "n-gonzalez",
+    kind: "ruling",
+    title:
+      "Second Circuit sets the standard for FTCA damages under New York law",
+    source: "Gonzalez v. United States · 2d Cir. · Public court record",
+    detail:
+      "Public court record, decided August 24, 2023. The court held that an FTCA pain-and-suffering award governed by New York law is reviewed under the “deviates materially” standard of CPLR § 5501(c). The holding is quoted from the bundled opinion, PDF page 23. Subsequent treatment has not been checked.",
+    summary:
+      "Read the holding in the original opinion, then compare the majority and the partial dissent on the $850,000 award.",
+    caseUpdates: [
+      {
+        matterId: "gonzalez",
+        impact:
+          "This is the decision itself, attached to the demonstration matter. No client matter is affected.",
+        nextStep:
+          "Open the opinion at page 23 from the matter’s documents, then review the prepared comparison of the majority and the partial dissent.",
+        target: "documents",
+      },
+    ],
+    read: true,
+    matterIds: ["gonzalez"],
+    createdAt: "2023-08-24T16:00:00Z",
   },
   {
     id: "n3",
@@ -150,41 +176,57 @@ export const seedAgents = (): Agent[] =>
     };
   });
 
-// Real citations below must be verified before use. All verification badges in this prototype are simulated.
+/**
+ * Real authorities are drawn from the bundled public opinions
+ * (lib/demo/court-records.ts): each holding is quoted from the file, on the
+ * page given, and checked by tests/unit/court-records.test.ts.
+ */
+const TOPICS: Record<CourtRecordId, string[]> = {
+  gonzalez: ["Damages", "Federal Tort Claims Act"],
+  malmberg: ["Damages", "Federal Tort Claims Act"],
+  carpenter: ["Privacy", "Fourth Amendment"],
+  mantikas: ["Consumer protection", "Class action"],
+  meyer: ["Arbitration", "Contracts"],
+};
+
+const realPrecedent = (id: CourtRecordId): Precedent => {
+  const r = COURT_RECORDS[id];
+  return {
+    id,
+    caseName: r.caseName,
+    citation: r.citation,
+    court:
+      r.court === "Supreme Court of the United States"
+        ? "U.S. Supreme Court"
+        : "Second Circuit",
+    decidedAt: r.decidedAt,
+    topics: TOPICS[id],
+    holding: r.holding?.quote ?? "",
+    verified: false,
+    record: id,
+  };
+};
+
+const connectedPrecedent = (id: ConnectedId): Precedent => {
+  const a = CONNECTED[id];
+  return {
+    id,
+    caseName: a.caseName,
+    citation: a.citation,
+    court: a.court,
+    decidedAt: a.decidedAt,
+    topics: a.topics,
+    holding: a.connection,
+    verified: false,
+    authority: id,
+  };
+};
+
 export const seedPrecedents = (): Precedent[] => [
-  {
-    id: "carpenter",
-    caseName: "Carpenter v. United States",
-    citation: "585 U.S. 296 (2018)",
-    court: "U.S. Supreme Court",
-    decidedAt: "2018-06-22",
-    topics: ["Privacy", "Fourth Amendment"],
-    holding:
-      "Research note: review the opinion for the treatment of historical cell-site location records. This is a sample summary, not a verified legal holding.",
-    verified: true,
-  },
-  {
-    id: "mantikas",
-    caseName: "Mantikas v. Kellogg Co.",
-    citation: "910 F.3d 633 (2d Cir. 2018)",
-    court: "Second Circuit",
-    decidedAt: "2018-12-11",
-    topics: ["Consumer protection", "Class action"],
-    holding:
-      "Research note: examine the opinion’s treatment of front-label representations and reasonable consumer expectations. Verify before use.",
-    verified: true,
-  },
-  {
-    id: "meyer",
-    caseName: "Meyer v. Uber Technologies, Inc.",
-    citation: "868 F.3d 66 (2d Cir. 2017)",
-    court: "Second Circuit",
-    decidedAt: "2017-08-17",
-    topics: ["Arbitration", "Contracts"],
-    holding:
-      "Research note: examine notice and assent in the electronic contracting process. Verify before use.",
-    verified: true,
-  },
+  ...(["gonzalez", "malmberg", "carpenter", "mantikas", "meyer"] as const).map(
+    realPrecedent,
+  ),
+  ...(["gasperini", "henry", "disorbo"] as const).map(connectedPrecedent),
   {
     id: "nexora",
     caseName: "U.S. v. Nexora Tech",

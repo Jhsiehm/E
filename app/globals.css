@@ -3698,3 +3698,130 @@ html[data-theme="dark"] .logo-paper .logo-grid i {
     grid-template-columns: 1fr;
   }
 }
+
+/* Public court records in the demo (Gonzalez matter, precedent library) */
+.public-record-tag {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.real-case-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--raised);
+  color: inherit;
+  text-decoration: none;
+}
+.real-case-entry:hover {
+  border-color: var(--navy);
+}
+.real-case-entry .grow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.real-case-entry small {
+  color: var(--muted);
+}
+.record-link {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+.record-row .grow {
+  display: flex;
+  flex-direction: column;
+}
+.provenance {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.provenance dt {
+  color: var(--muted);
+}
+.provenance dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.provenance code {
+  font-size: 12px;
+}
+.workflow-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.workflow-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--teal);
+  color: var(--teal-text);
+}
+.workflow-question {
+  font-style: italic;
+  margin: 0;
+}
+.workflow-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.workflow-citation {
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.workflow-citation figcaption {
+  font-size: 14px;
+  color: var(--muted);
+}
+.workflow-citation blockquote,
+.record-quote {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--navy);
+  background: rgba(20, 47, 64, 0.04);
+  line-height: 1.55;
+}
+/* Long reading views scroll inside the page, which never scrolls on desktop. */
+.compare-view,
+.precedent-detail {
+  overflow-y: auto;
+  min-height: 0;
+}
+.compare-view > *,
+.workflow-view > *,
+.precedent-detail > * {
+  flex: none;
+}
+/* The public-record overview has more cards than fit: each column scrolls. */
+.public-record-grid > .stack {
+  overflow-y: auto;
+  min-height: 0;
+}
+.public-record-grid > .stack > .card {
+  flex: none;
+}
+.public-record-grid .case-summary-copy {
+  max-height: 220px;
+}
+.precedent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.precedent-section h3 {
+  margin: 10px 0 0;
+}

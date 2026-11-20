@@ -37,8 +37,8 @@ test("a new account starts empty; sample cases are an optional, labelled tutoria
   await page.getByRole("dialog").getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/\/matters$/);
   await expect(page.getByRole("dialog", { name: "Matters" })).toBeVisible();
-  await expect(page.locator("tbody tr")).toHaveCount(5);
-  await expect(page.locator("tbody .sample-tag")).toHaveCount(5);
+  await expect(page.locator("tbody tr")).toHaveCount(6);
+  await expect(page.locator("tbody .sample-tag")).toHaveCount(6);
   await expect(page.locator(".table-wrap.tour-target")).toBeVisible();
 
   await page.getByRole("dialog").getByRole("button", { name: "Next" }).click();

@@ -119,7 +119,7 @@ describe("fixture mode", () => {
     );
     const body = await res.json();
     expect(body.samples).toBe("on");
-    expect(body.matters).toHaveLength(5);
+    expect(body.matters).toHaveLength(6);
     expect(body.matters.every((m: { sample?: boolean }) => m.sample)).toBe(
       true,
     );

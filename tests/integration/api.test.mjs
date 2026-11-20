@@ -40,7 +40,7 @@ function client(samples = true) {
 }
 test("matter creation, summary, strategy and chat remain in the same demo session", async () => {
   const api = client();
-  assert.equal((await api("bootstrap")).data.matters.length, 5);
+  assert.equal((await api("bootstrap")).data.matters.length, 6);
   const created = await api("matters", "POST", {
     name: "Test matter",
     court: "Test court",
@@ -60,7 +60,7 @@ test("matter creation, summary, strategy and chat remain in the same demo sessio
   });
   assert.match(answer.data.text, /simulated/);
   assert.equal((await api(`matters/${id}/chat`)).data.length, 2);
-  assert.equal((await client()("bootstrap")).data.matters.length, 5);
+  assert.equal((await client()("bootstrap")).data.matters.length, 6);
 });
 test("notice read state is session-scoped and filterable", async () => {
   const api = client();

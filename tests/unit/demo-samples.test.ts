@@ -25,7 +25,7 @@ describe("demo sample cases", () => {
     expect(s.matters).toEqual([]);
     expect(workspaceAction(s, "samples", "POST")).toBe(true);
     expect(s.samples).toBe("on");
-    expect(s.matters.length).toBe(5);
+    expect(s.matters.length).toBe(6);
     expect(s.matters.every((m) => m.sample)).toBe(true);
     expect(s.notices.length).toBeGreaterThan(0);
   });
@@ -45,7 +45,7 @@ describe("demo sample cases", () => {
       status: "draft",
     });
     workspaceAction(s, "samples", "POST");
-    expect(s.matters.length).toBe(6);
+    expect(s.matters.length).toBe(7);
     workspaceAction(s, "samples", "DELETE");
     expect(s.matters).toEqual([own]);
     expect(s.documents.map((d) => d.id)).toEqual(["my-doc"]);

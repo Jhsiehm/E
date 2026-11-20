@@ -1,0 +1,273 @@
+{
+  "carpenter": {
+    "author": "CHIEF JUSTICE ROBERTS",
+    "panel": "ROBERTS, C. J., delivered the opinion of the Court, in which GINSBURG, BREYER, SOTOMAYOR, and KAGAN, JJ., joined. KENNEDY, J., filed a dissenting opinion, in which THOMAS and ALITO, JJ., joined. THOMAS, J., filed a dissenting opinion. ALITO, J., filed a dissenting opinion, in which THOMAS, J., joined. GORSUCH, J., filed a dissenting opinion.",
+    "passages": [
+      {
+        "kind": "facts",
+        "page": 7,
+        "printedPage": "3",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "The first order sought 152 days of cell-site records from MetroPCS, which produced records spanning 127 days. The second order requested seven days of CSLI from Sprint, which produced two days of records covering the period when Carpenter’s phone was “roaming” in northeastern Ohio. Altogether the Government obtained 12,898 location points cataloging Carpenter’s movements—an average of 101 data points per day."
+      },
+      {
+        "kind": "question",
+        "page": 5,
+        "printedPage": "1",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "This case presents the question whether the Government conducts a search under the Fourth Amendment when it accesses historical cell phone records that provide a comprehensive chronicle of the user’s past movements."
+      },
+      {
+        "kind": "holding",
+        "page": 15,
+        "printedPage": "11",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "Whether the Government employs its own surveillance technology as in Jones or leverages the technology of a wireless carrier, we hold that an individual maintains a legitimate expectation of privacy in the record of his physical movements as captured through CSLI. The location information obtained from Carpenter’s wireless carriers was the product of a search."
+      },
+      {
+        "kind": "reasoning",
+        "page": 16,
+        "printedPage": "12",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "Mapping a cell phone’s location over the course of 127 days provides an all-encompassing record of the holder’s whereabouts. As with GPS information, the time-stamped data provides an intimate window into a person’s life, revealing not only his particular movements, but through them his “familial, political, professional, religious, and sexual associations.”"
+      },
+      {
+        "kind": "reasoning",
+        "page": 17,
+        "printedPage": "13",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "Accordingly, when the Government tracks the location of a cell phone it achieves near perfect surveillance, as if it had attached an ankle monitor to the phone’s user."
+      },
+      {
+        "kind": "reasoning",
+        "page": 23,
+        "printedPage": "19",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "Before compelling a wireless carrier to turn over a subscriber’s CSLI, the Government’s obligation is a familiar one—get a warrant."
+      },
+      {
+        "kind": "disposition",
+        "page": 26,
+        "printedPage": "22",
+        "speaker": "Opinion of the Court (Roberts, C.J.)",
+        "quote": "The judgment of the Court of Appeals is reversed, and"
+      },
+      {
+        "kind": "disposition",
+        "page": 27,
+        "printedPage": "23",
+        "speaker": "Opinion of the Court (Roberts, C.J.), continued",
+        "quote": "the case is remanded for further proceedings consistent with this opinion."
+      },
+      {
+        "kind": "separate",
+        "page": 29,
+        "printedPage": "2",
+        "speaker": "Kennedy, J., dissenting (joined by Thomas and Alito, JJ.)",
+        "quote": "Cell-site records, however, are no different from the many other kinds of business records the Government has a lawful right to obtain by compulsory process. Customers like petitioner do not own, possess, control, or use the records, and for that reason have no reasonable expectation that they cannot be disclosed pursuant to lawful compulsory process."
+      },
+      {
+        "kind": "separate",
+        "page": 51,
+        "printedPage": "1",
+        "speaker": "Thomas, J., dissenting",
+        "quote": "By obtaining the cell-site records of MetroPCS and Sprint, the Government did not search Carpenter’s property. He did not create the records, he does not maintain them, he cannot control them, and he cannot destroy them."
+      },
+      {
+        "kind": "separate",
+        "page": 72,
+        "printedPage": "1",
+        "speaker": "Alito, J., dissenting (joined by Thomas, J.)",
+        "quote": "First, the Court ignores the basic distinction between an actual search (dispatching law enforcement officers to enter private premises and root through private papers and effects) and an order merely requiring a party to look through its own records and produce specified documents. The former, which intrudes on personal privacy far more deeply, requires probable cause; the latter does not."
+      },
+      {
+        "kind": "separate",
+        "page": 110,
+        "printedPage": "12",
+        "speaker": "Gorsuch, J., dissenting",
+        "quote": "From the founding until the 1960s, the right to assert a Fourth Amendment claim didn’t depend on your ability to appeal to a judge’s personal sensibilities about the “reasonableness” of your expectations or privacy. It was tied to the law."
+      }
+    ]
+  },
+  "mantikas": {
+    "author": "LEVAL, Circuit Judge",
+    "panel": "LEVAL, SACK, and DRONEY, Circuit Judges.",
+    "passages": [
+      {
+        "kind": "facts",
+        "page": 3,
+        "speaker": "Opinion of the Court (Leval, J.)",
+        "quote": "They alleged that such labeling would cause a reasonable consumer to believe that the grain in whole grain Cheez‐Its was predominantly whole grain, when, in fact, it was not. The primary grain content was enriched white flour. The district court dismissed the Complaint pursuant to Rule 12(b)(6)."
+      },
+      {
+        "kind": "standard",
+        "page": 8,
+        "speaker": "Opinion of the Court (Leval, J.)",
+        "quote": "To state a claim for false advertising or deceptive business practices under New York or California law, a plaintiff must plausibly allege that the deceptive conduct was “likely to mislead a reasonable consumer acting reasonably under the circumstances.”"
+      },
+      {
+        "kind": "holding",
+        "page": 3,
+        "speaker": "Opinion of the Court (Leval, J.)",
+        "quote": "We conclude that the district court erred in dismissing Plaintiffs’ complaint. Reviewed under the proper standards for a Rule 12(b)(6) motion, the Complaint plausibly alleged that a reasonable consumer would be misled by Defendant’s whole grain labels to believe that the grain in whole grain Cheez‐Its was predominantly whole grain."
+      },
+      {
+        "kind": "reasoning",
+        "page": 10,
+        "speaker": "Opinion of the Court (Leval, J.)",
+        "quote": "While the disclosures on the front of the box relied on by the district court (“MADE WITH 5G [OR 8G] OF WHOLE GRAIN PER SERVING”) do set forth accurately the amount of whole grain in the crackers per serving, they are nonetheless misleading because they falsely imply that the grain content is entirely or at least predominantly whole grain, whereas in fact, the grain component consisting of enriched white flour substantially exceeds the whole grain portion."
+      },
+      {
+        "kind": "reasoning",
+        "page": 14,
+        "speaker": "Opinion of the Court (Leval, J.)",
+        "quote": "In our case of Cheez‐Its crackers, in contrast, reasonable consumers are likely to understand that crackers are typically made predominantly of grain. They look to the bold assertions on the packaging to discern what type of grain. The representation that a cracker is “made with whole grain” would thus plausibly lead a reasonable consumer to conclude that the grain ingredient was entirely, or at least predominately, whole grain."
+      },
+      {
+        "kind": "disposition",
+        "page": 16,
+        "speaker": "Opinion of the Court (Leval, J.)",
+        "quote": "The judgment of the district court in favor of Defendant is VACATED, and the case is REMANDED for further proceedings."
+      }
+    ]
+  },
+  "meyer": {
+    "author": "CHIN, Circuit Judge",
+    "panel": "RAGGI, CHIN, AND CARNEY, Circuit Judges.",
+    "passages": [
+      {
+        "kind": "facts",
+        "page": 4,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "After using the application approximately ten times, Meyer brought this action on behalf of himself and other similarly situated Uber accountholders against Uberʹs co‐founder and former Chief Executive Officer, defendant‐appellant Travis Kalanick, alleging that the Uber application allows third‐party drivers to illegally fix prices. The district court joined Uber as a defendant and denied motions by Kalanick and Uber to compel arbitration."
+      },
+      {
+        "kind": "question",
+        "page": 21,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "Accordingly, we must consider whether Meyer was on inquiry notice of the arbitration provision by virtue of the hyperlink to the Terms of Service on the Payment Screen and, thus, manifested his assent to the agreement by clicking ʺRegister.ʺ"
+      },
+      {
+        "kind": "holding",
+        "page": 31,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "Accordingly, we conclude on this record, as a matter of law, that Meyer agreed to arbitrate his claims with Uber."
+      },
+      {
+        "kind": "reasoning",
+        "page": 24,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "Turning to the interface at issue in this case, we conclude that the design of the screen and language used render the notice provided reasonable as a matter of California law."
+      },
+      {
+        "kind": "reasoning",
+        "page": 28,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "Accordingly, we conclude that the Uber App provided reasonably conspicuous notice of the Terms of Service as a matter of California law and turn to the question of whether Meyer unambiguously manifested his assent to those terms."
+      },
+      {
+        "kind": "reasoning",
+        "page": 30,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "The transactional context of the partiesʹ dealings reinforces our conclusion. Meyer located and downloaded the Uber App, signed up for an account, and entered his credit card information with the intention of entering into a forward‐looking relationship with Uber."
+      },
+      {
+        "kind": "disposition",
+        "page": 32,
+        "speaker": "Opinion of the Court (Chin, J.)",
+        "quote": "For the reasons set forth above, the order of the district court denying defendantsʹ motions to compel arbitration is VACATED, and the case is REMANDED to the district court to consider whether defendants have waived their rights to arbitration and for any further proceedings consistent with this opinion."
+      }
+    ]
+  },
+  "malmberg": {
+    "author": "POOLER, Circuit Judge",
+    "panel": "CABRANES, POOLER, Circuit Judges, and GARDEPHE, District Judge (sitting by designation).",
+    "passages": [
+      {
+        "kind": "facts",
+        "page": 4,
+        "speaker": "Opinion of the Court (Pooler, J.)",
+        "quote": "Charles Malmberg sued the United States under the Federal Tort Claims Act (“FTCA”) after surgery at the Syracuse Veteran’s Administration Medical Center (“VA”) rendered him quadriplegic. After the liability portion of a bifurcated bench trial, the district court found the VA liable for Malmberg’s injuries."
+      },
+      {
+        "kind": "holding",
+        "page": 5,
+        "speaker": "Opinion of the Court (Pooler, J.)",
+        "quote": "We vacate the district court’s decision insofar as it offset the award for future medical care and supplies. Federal law does not require that a veteran injured as a result of the VA’s malpractice be forced to continue under VA care for lack of financial resources and be subject to a concomitant offset, and New York state law does not warrant such an offset."
+      },
+      {
+        "kind": "holding",
+        "page": 31,
+        "speaker": "Opinion of the Court (Pooler, J.)",
+        "quote": "Absent further analysis and clearer reasoning by the district court, we cannot make a fair determination about whether the pain and suffering award is inadequate."
+      },
+      {
+        "kind": "reasoning",
+        "page": 30,
+        "speaker": "Opinion of the Court (Pooler, J.)",
+        "quote": "This sparse analysis by the district court provides little on which we may base our review, and thus fails as a matter of law."
+      },
+      {
+        "kind": "reasoning",
+        "page": 13,
+        "speaker": "Opinion of the Court (Pooler, J.)",
+        "quote": "It is one thing to require an offset for benefits that are meant to provide an alternative to tort damages, and another thing entirely to require an offset that would force a veteran to continue to receive medical care from his tortfeasor."
+      },
+      {
+        "kind": "disposition",
+        "page": 33,
+        "speaker": "Opinion of the Court (Pooler, J.)",
+        "quote": "For the reasons given above, the decision of the district court is affirmed in part and vacated in part, and remanded for further proceedings consistent with this opinion."
+      }
+    ]
+  },
+  "gonzalez": {
+    "author": "JOSEPH F. BIANCO, Circuit Judge",
+    "panel": "CHIN, SULLIVAN, and BIANCO, Circuit Judges.",
+    "passages": [
+      {
+        "kind": "facts",
+        "page": 3,
+        "speaker": "Opinion of the Court (Bianco, J.)",
+        "quote": "Prior to trial, the government conceded that the VA hospital’s ten-month failure to diagnose Salazar was a departure from the standard of care. Following a two-day bench trial, the district court (Daniels, J.) entered judgment and awarded $975,233.75 in damages to Gonzalez, including $850,000 for pain and suffering and $50,000 for loss of consortium."
+      },
+      {
+        "kind": "question",
+        "page": 17,
+        "speaker": "Opinion of the Court (Bianco, J.)",
+        "quote": "On appeal, Gonzalez does not argue that the district court clearly erred in its findings of fact, but rather contends that: (1) the district court failed to provide sufficient explanation and analysis under Rule 52 for its pain-and-suffering and loss-of-consortium awards; (2) the district court made certain legal errors in calculating the awards; and (3) the awards deviate materially from what would be reasonable compensation under New York law."
+      },
+      {
+        "kind": "holding",
+        "page": 23,
+        "speaker": "Opinion of the Court (Bianco, J.)",
+        "quote": "Therefore, we hold that “where the nature and measure of damages is governed by New York law,” Malmberg, 816 F.3d at 199, a pain-and-suffering award arising out of the FTCA should be set aside if it “deviates materially from what would be reasonable compensation,” CPLR § 5501(c)."
+      },
+      {
+        "kind": "reasoning",
+        "page": 31,
+        "speaker": "Opinion of the Court (Bianco, J.)",
+        "quote": "Under these circumstances, the district court satisfied Rule 52 because its analysis is sufficient for us to exercise meaningful appellate review to determine whether the amount of the award was adequate under New York law."
+      },
+      {
+        "kind": "reasoning",
+        "page": 39,
+        "speaker": "Opinion of the Court (Bianco, J.)",
+        "quote": "In sum, we conclude that the $850,000 award for pain and suffering did not deviate materially from what would constitute reasonable compensation under New York law."
+      },
+      {
+        "kind": "disposition",
+        "page": 47,
+        "speaker": "Opinion of the Court (Bianco, J.)",
+        "quote": "For the reasons set forth above, we AFFIRM the judgment of the district court."
+      },
+      {
+        "kind": "separate",
+        "page": 54,
+        "printedPage": "7",
+        "speaker": "Sullivan, J., concurring in part and dissenting in part",
+        "quote": "In short, despite the majority’s steadfast efforts to justify the district court’s conclusion, I find myself still searching for the basis for the district court’s pain-and-suffering award. For this reason, I would vacate the award and remand for reconsideration and further explanation."
+      }
+    ]
+  }
+}

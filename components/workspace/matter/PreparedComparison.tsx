@@ -38,13 +38,28 @@ function OpenOriginal({
   excerpt,
   documentId,
   sha256,
+  publicUrl,
 }: {
   excerpt: PreparedExcerpt;
   documentId: string;
   sha256: string;
+  /** Demo: the bundled public court record, opened directly. */
+  publicUrl?: string;
 }) {
   const { notify } = useWorkspace();
   const [opening, setOpening] = useState(false);
+  if (publicUrl)
+    return (
+      <a
+        className="button record-link"
+        href={`${publicUrl}#page=${excerpt.page}`}
+        target="_blank"
+        rel="noopener"
+      >
+        <Icon name="documents" size={16} />
+        Open original, page {excerpt.page}
+      </a>
+    );
   return (
     <button
       type="button"
@@ -84,10 +99,12 @@ function ExcerptCard({
   excerpt,
   documentId,
   sha256,
+  publicUrl,
 }: {
   excerpt: PreparedExcerpt;
   documentId: string;
   sha256: string;
+  publicUrl?: string;
 }) {
   return (
     <section className="card compare-excerpt" aria-label={excerpt.role}>
@@ -98,7 +115,12 @@ function ExcerptCard({
         {excerpt.printedPage ? ` (printed page ${excerpt.printedPage})` : ""}
       </p>
       <blockquote>{excerpt.quote}</blockquote>
-      <OpenOriginal excerpt={excerpt} documentId={documentId} sha256={sha256} />
+      <OpenOriginal
+        excerpt={excerpt}
+        documentId={documentId}
+        sha256={sha256}
+        publicUrl={publicUrl}
+      />
     </section>
   );
 }
@@ -108,11 +130,13 @@ export function ComparisonView({
   comparison,
   documentId,
   documentName,
+  publicUrl,
   backHref,
 }: {
   comparison: PreparedComparison;
   documentId: string;
   documentName: string;
+  publicUrl?: string;
   backHref: string;
 }) {
   const sha256 = comparison.sha256;
@@ -132,17 +156,20 @@ export function ComparisonView({
           excerpt={comparison.left}
           documentId={documentId}
           sha256={sha256}
+          publicUrl={publicUrl}
         />
         <ExcerptCard
           excerpt={comparison.right}
           documentId={documentId}
           sha256={sha256}
+          publicUrl={publicUrl}
         />
       </div>
       <p className="compare-note">
         Both excerpts were checked by hand against the original file. This
         example was prepared to show the review workflow; Casevex did not find
-        these passages on its own.
+        these passages on its own. The majority opinion states the court’s
+        holding; the partial dissent is not controlling law.
       </p>
     </div>
   );

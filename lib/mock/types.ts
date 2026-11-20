@@ -1,4 +1,6 @@
 import type { AgentStatus, PracticeAreaKey } from "@/lib/agents";
+import type { CourtRecordId } from "@/lib/demo/court-records";
+import type { ConnectedId } from "@/lib/demo/connected-authorities";
 
 export type Matter = {
   id: string;
@@ -14,6 +16,8 @@ export type Matter = {
   updatedAt: string;
   /** Made-up practice case from the demo tutorial, not a real client. */
   sample?: boolean;
+  /** Demo only: built from a public court record, not a client file. */
+  publicRecord?: boolean;
 };
 export type Doc = {
   id: string;
@@ -30,6 +34,8 @@ export type Doc = {
   processingError?: string | null;
   /** sha256 of the latest stored version (live mode only). */
   sha256?: string | null;
+  /** Demo only: a public, read-only court record bundled with the app. */
+  publicUrl?: string;
 };
 export type Deadline = {
   id: string;
@@ -107,6 +113,13 @@ export type Precedent = {
   holding: string;
   verified: boolean;
   isSample?: boolean;
+  /**
+   * Demo only: the bundled public opinion this entry is drawn from. Its
+   * holding quotation was checked by hand against that file.
+   */
+  record?: CourtRecordId;
+  /** Demo only: an authority Gonzalez relies on, quoted by reporter page. */
+  authority?: ConnectedId;
 };
 export type State = {
   me: {

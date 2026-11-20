@@ -48,7 +48,7 @@ test("a signed-out visitor enters the complete sample account without onboarding
   assert.equal(response.headers.get("cache-control"), "no-store");
   const data = await response.json();
   assert.equal(data.samples, "on");
-  assert.equal(data.matters.length, 5);
+  assert.equal(data.matters.length, 6);
   for (const key of [
     "documents",
     "notices",
@@ -71,16 +71,16 @@ test("demo mutations are isolated between visitors and restart restores samples"
   );
   assert.equal(
     (await (await first("/api/bootstrap")).json()).matters.length,
-    6,
+    7,
   );
   assert.equal(
     (await (await second("/api/bootstrap")).json()).matters.length,
-    5,
+    6,
   );
   await first("/demo");
   assert.equal(
     (await (await first("/api/bootstrap")).json()).matters.length,
-    5,
+    6,
   );
 });
 

@@ -1,5 +1,6 @@
 import type { State } from "./types";
 import { seedDeadlines, seedDocuments, seedMatters } from "./seed-workspace";
+import { gonzalezDocuments, gonzalezMatter } from "./seed-gonzalez";
 import {
   seedAgents,
   seedChats,
@@ -44,14 +45,18 @@ export function emptyState(me: State["me"] = { ...DEMO_ME }): State {
 
 /**
  * The practice workspace: five made-up cases with documents, deadlines,
- * notices and precedents, each case marked as a sample.
+ * notices and precedents, each case marked as a sample, plus one matter
+ * built from a public court record (Gonzalez) with its bundled opinions.
  */
 export function seed(me: State["me"] = { ...DEMO_ME }): State {
   return {
     me,
-    matters: seedMatters().map((m) => ({ ...m, sample: true })),
+    matters: [
+      ...seedMatters().map((m) => ({ ...m, sample: true })),
+      gonzalezMatter(),
+    ],
     deadlines: seedDeadlines(),
-    documents: seedDocuments(),
+    documents: [...seedDocuments(), ...gonzalezDocuments()],
     notices: seedNotices(),
     agents: seedAgents(),
     precedents: seedPrecedents(),
