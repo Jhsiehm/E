@@ -16,7 +16,8 @@ export default function SampleBanner() {
       <div className="sample-banner" role="note">
         <span>
           <b>Demo workspace.</b> Fictional data and simulated research. Edits
-          are temporary; use sample information only.
+          are temporary; use sample information only. Sample dates are set as of
+          Nov 11, 2026.
         </span>
         <div className="sample-banner-actions">
           <button type="button" onClick={startTour}>
