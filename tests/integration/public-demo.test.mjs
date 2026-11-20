@@ -71,16 +71,16 @@ test("demo mutations are isolated between visitors and restart restores samples"
   );
   assert.equal(
     (await (await first("/api/bootstrap")).json()).matters.length,
-    6,
+    7,
   );
   assert.equal(
     (await (await second("/api/bootstrap")).json()).matters.length,
-    5,
+    6,
   );
   await first("/demo");
   assert.equal(
     (await (await first("/api/bootstrap")).json()).matters.length,
-    5,
+    6,
   );
 });
 

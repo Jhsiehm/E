@@ -2,13 +2,7 @@
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import { date } from "@/components/workspace/format";
-import {
-  Chip,
-  Card,
-  Empty,
-  Filter,
-  Search,
-} from "@/components/workspace/ui";
+import { Chip, Card, Empty, Filter, Search } from "@/components/workspace/ui";
 import { Header } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
 import PrecedentDetail from "./PrecedentDetail";
@@ -70,7 +64,16 @@ export default function PrecedentsPage() {
             <Filter
               name="date"
               title="Date"
-              options={["2026", "2023", "2018", "2017", "2016"]}
+              options={[
+                "2026",
+                "2023",
+                "2018",
+                "2017",
+                "2016",
+                "2006",
+                "2003",
+                "1996",
+              ]}
             />
             <button className="text-button" onClick={clear}>
               Clear filters
@@ -97,15 +100,17 @@ export default function PrecedentsPage() {
                       {p.court} ·{" "}
                       {p.decidedAt ? date(p.decidedAt) : "Date pending"}
                       {p.isSample ? " · Fictional sample" : ""}
-                      {p.record ? " · Public court record" : ""}
+                      {p.record || p.authority ? " · Public court record" : ""}
                     </p>
                     <small className="verified">
                       <i className="square" />
                       {p.record
                         ? "Holding quoted from the bundled opinion"
-                        : p.verified
-                          ? "Verified against the opinion (simulated)"
-                          : "Awaiting verification"}
+                        : p.authority
+                          ? "Quoted from the opinion text, by reporter page"
+                          : p.verified
+                            ? "Verified against the opinion (simulated)"
+                            : "Awaiting verification"}
                     </small>
                     <span className="topic-list">
                       {p.topics.map((t) => (

@@ -11,7 +11,11 @@ import CaseSummaryCard from "./CaseSummaryCard";
 import AnalysisCard from "./AnalysisCard";
 import { CompareAction, ComparisonView } from "./PreparedComparison";
 import { preparedComparisonFor } from "@/lib/demo/prepared-comparison";
-import { SourceDocuments, WorkflowAction } from "./PublicRecord";
+import {
+  ConnectedAuthorities,
+  SourceDocuments,
+  WorkflowAction,
+} from "./PublicRecord";
 import ResearchWorkflow from "./ResearchWorkflow";
 
 /** Matter overview: summary, issues, deadlines, documents. */
@@ -51,7 +55,7 @@ export default function OverviewTab() {
   if (matter.publicRecord) {
     if (view === "workflow") return <ResearchWorkflow backHref={viewHref()} />;
     return (
-      <div className="page-body matter-grid">
+      <div className="page-body matter-grid public-record-grid">
         <div className="stack">
           {summaryCard}
           <WorkflowAction href={viewHref("workflow")} />
@@ -61,6 +65,7 @@ export default function OverviewTab() {
             <CompareAction comparison={comparison} href={viewHref("compare")} />
           )}
           <SourceDocuments documents={documents} />
+          <ConnectedAuthorities />
         </div>
       </div>
     );

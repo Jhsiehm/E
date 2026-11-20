@@ -82,11 +82,33 @@ test("a real precedent quotes its holding and links the original", async ({
   await openApp(page, "/demo");
   await openApp(page, "/precedents/carpenter");
   await expect(
-    page.getByText("Holding, quoted from the opinion"),
+    page.getByRole("heading", { name: "Holding", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Separate opinions" }),
   ).toBeVisible();
   await expect(page.getByText("(simulated)")).toHaveCount(0);
+  const hrefs = await page
+    .locator("a.record-link")
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+  expect(hrefs).toContain(
+    "/court-records/carpenter_v._united_states.pdf#page=15",
+  );
+});
+
+test("a connected authority shows where Gonzalez cites it", async ({
+  page,
+}) => {
+  await openApp(page, "/demo");
+  await openApp(page, "/precedents/gasperini");
+  await expect(page.getByText("518 U.S. at 425").first()).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "How Gonzalez v. United States uses it",
+    }),
+  ).toBeVisible();
   await expect(page.locator("a.record-link")).toHaveAttribute(
     "href",
-    "/court-records/carpenter_v._united_states.pdf#page=26",
+    "/court-records/21-548-2023-08-24.pdf#page=21",
   );
 });

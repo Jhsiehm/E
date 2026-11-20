@@ -7,30 +7,21 @@ import { COURT_RECORDS } from "@/lib/demo/court-records";
 import {
   OpenRecord,
   Provenance,
-  pageLabel,
 } from "@/components/workspace/matter/PublicRecord";
+import { ConnectedSections, RecordSections } from "./PrecedentSections";
 
-/** Matters a real authority is attached to in the demo. */
-const USED_IN: Record<string, [string, string]> = {
-  gonzalez: [
-    "/matters/gonzalez",
-    "Gonzalez v. United States · Primary authority",
-  ],
-  malmberg: [
-    "/matters/gonzalez",
-    "Gonzalez v. United States · Supporting precedent",
-  ],
-};
-
-/** One authority: a quoted holding from a bundled opinion, or a sample note. */
+/**
+ * One authority. Real cases show exact passages (facts, question, holding,
+ * reasoning, disposition, separate opinions), each with its page; the
+ * fictional sample keeps its labelled research note.
+ */
 export default function PrecedentDetail({
   precedent,
 }: {
   precedent: Precedent;
 }) {
   const record = precedent.record ? COURT_RECORDS[precedent.record] : null;
-  const holding = record?.holding;
-  const used = USED_IN[precedent.id];
+  const real = record || precedent.authority;
   return (
     <Card className="page-body precedent-detail">
       <Link href="/precedents">← All precedents</Link>
@@ -40,28 +31,42 @@ export default function PrecedentDetail({
       </p>
       <Chip tone="rose">
         {record
-          ? "Public court record · Opinion bundled"
-          : precedent.isSample
-            ? "Fictional sample authority"
-            : "Verification is simulated"}
+          ? "Public court record · Original opinion bundled"
+          : precedent.authority
+            ? "Public court record · Reporter text from CourtListener"
+            : precedent.isSample
+              ? "Fictional sample authority"
+              : "Verification is simulated"}
       </Chip>
-      {record && holding ? (
+      {real && (
+        <p className="workflow-notice">
+          Every passage below is quoted exactly from the opinion and was checked
+          against the page cited. Casevex did not generate these passages.
+          Subsequent treatment and current good-law status have not been
+          checked.
+        </p>
+      )}
+      {record ? (
         <>
-          <h2>Holding, quoted from the opinion</h2>
-          <blockquote className="record-quote">{holding.quote}</blockquote>
-          <p className="compare-meta">
-            {pageLabel(holding)} · Quotation checked by hand against the bundled
-            file. Subsequent treatment has not been checked.
-          </p>
           <div className="actions">
-            <OpenRecord record={record} page={holding.page} />
+            <OpenRecord record={record}>Open the full opinion (PDF)</OpenRecord>
           </div>
-          <Provenance record={record} />
+          <RecordSections id={record.id} />
+          <section className="precedent-section">
+            <h3>Source</h3>
+            <Provenance record={record} />
+          </section>
         </>
+      ) : precedent.authority ? (
+        <ConnectedSections id={precedent.authority} />
       ) : (
         <>
           <h2>Research note</h2>
           <p>{precedent.holding}</p>
+          <h3>Used in</h3>
+          <Link href="/matters/anderson">
+            Anderson v. Meridian Tech · Sample association
+          </Link>
         </>
       )}
       <div className="actions">
@@ -69,16 +74,6 @@ export default function PrecedentDetail({
           <Chip key={t}>{t}</Chip>
         ))}
       </div>
-      <h3>Used in</h3>
-      {used ? (
-        <Link href={used[0]}>{used[1]}</Link>
-      ) : record ? (
-        <p className="compare-meta">Not attached to a matter in the demo.</p>
-      ) : (
-        <Link href="/matters/anderson">
-          Anderson v. Meridian Tech · Sample association
-        </Link>
-      )}
       <Foot />
     </Card>
   );

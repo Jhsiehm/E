@@ -2,6 +2,7 @@ import { agentForPracticeArea, statusForPracticeArea } from "@/lib/agents";
 import { sampleAnswer, sources } from "./samples";
 import type { Agent, Message, Notice, Precedent } from "./types";
 import { COURT_RECORDS, type CourtRecordId } from "@/lib/demo/court-records";
+import { CONNECTED, type ConnectedId } from "@/lib/demo/connected-authorities";
 
 /** Sample notices, agents, precedents and chats. Fresh copies per call. */
 
@@ -206,10 +207,26 @@ const realPrecedent = (id: CourtRecordId): Precedent => {
   };
 };
 
+const connectedPrecedent = (id: ConnectedId): Precedent => {
+  const a = CONNECTED[id];
+  return {
+    id,
+    caseName: a.caseName,
+    citation: a.citation,
+    court: a.court,
+    decidedAt: a.decidedAt,
+    topics: a.topics,
+    holding: a.connection,
+    verified: false,
+    authority: id,
+  };
+};
+
 export const seedPrecedents = (): Precedent[] => [
   ...(["gonzalez", "malmberg", "carpenter", "mantikas", "meyer"] as const).map(
     realPrecedent,
   ),
+  ...(["gasperini", "henry", "disorbo"] as const).map(connectedPrecedent),
   {
     id: "nexora",
     caseName: "U.S. v. Nexora Tech",

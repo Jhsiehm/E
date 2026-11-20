@@ -3806,3 +3806,22 @@ html[data-theme="dark"] .logo-paper .logo-grid i {
 .precedent-detail > * {
   flex: none;
 }
+/* The public-record overview has more cards than fit: each column scrolls. */
+.public-record-grid > .stack {
+  overflow-y: auto;
+  min-height: 0;
+}
+.public-record-grid > .stack > .card {
+  flex: none;
+}
+.public-record-grid .case-summary-copy {
+  max-height: 220px;
+}
+.precedent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.precedent-section h3 {
+  margin: 10px 0 0;
+}

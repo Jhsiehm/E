@@ -9,6 +9,7 @@ import {
   type Pinpoint,
 } from "@/lib/demo/court-records";
 import { LABEL, RESEARCH_QUESTION } from "@/lib/demo/gonzalez-workflow";
+import { CONNECTED } from "@/lib/demo/connected-authorities";
 
 /** Marks a matter built from a public court record wherever it is listed. */
 export const PublicRecordTag = () => (
@@ -140,6 +141,54 @@ export function WorkflowAction({ href }: { href: string }) {
       <Link className="button primary" href={href}>
         Open the research workflow
       </Link>
+    </Card>
+  );
+}
+
+/** Overview card: the real authorities this opinion relies on. */
+export function ConnectedAuthorities() {
+  const items: [string, string, string, string][] = [
+    [
+      "malmberg",
+      "Malmberg v. United States",
+      "816 F.3d 185 (2d Cir. 2016)",
+      "Distinguished on the adequacy of the explanation",
+    ],
+    ...Object.values(CONNECTED).map((a): [string, string, string, string] => [
+      a.id,
+      a.caseName,
+      a.citation,
+      a.id === "gasperini"
+        ? "Source of the “deviates materially” standard"
+        : a.id === "henry"
+          ? "Rule 52(a) explanation; held inapposite"
+          : "Inflation in comparable awards",
+    ]),
+  ];
+  return (
+    <Card title="Connected authorities">
+      <p className="compare-meta">
+        Real cases this opinion relies on, each with exact passages and pinpoint
+        pages.
+      </p>
+      <div className="scroll">
+        {items.map(([id, name, cite, why]) => (
+          <Link
+            className="list-row record-row"
+            key={id}
+            href={`/precedents/${id}`}
+          >
+            <Icon name="court" size={18} />
+            <span className="grow">
+              <i>{name}</i>
+              <small>
+                {cite} · {why}
+              </small>
+            </span>
+            <Icon name="chevron" size={16} />
+          </Link>
+        ))}
+      </div>
     </Card>
   );
 }

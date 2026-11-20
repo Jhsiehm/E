@@ -1,5 +1,6 @@
 import type { AgentStatus, PracticeAreaKey } from "@/lib/agents";
 import type { CourtRecordId } from "@/lib/demo/court-records";
+import type { ConnectedId } from "@/lib/demo/connected-authorities";
 
 export type Matter = {
   id: string;
@@ -117,6 +118,8 @@ export type Precedent = {
    * holding quotation was checked by hand against that file.
    */
   record?: CourtRecordId;
+  /** Demo only: an authority Gonzalez relies on, quoted by reporter page. */
+  authority?: ConnectedId;
 };
 export type State = {
   me: {
