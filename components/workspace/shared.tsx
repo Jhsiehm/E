@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { MatterTag } from "@/components/workspace/matter/PublicRecord";
 import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
 import type { Matter, Deadline, Doc } from "@/lib/mock/data";
@@ -104,13 +105,6 @@ export const Ruling = ({ compact = false }: { compact?: boolean }) => {
   );
 };
 
-/** Marks a made-up practice case wherever it is listed. */
-export const SampleTag = () => (
-  <span className="sample-tag" title="Made-up practice case, not a real client">
-    Sample
-  </span>
-);
-
 export const MatterList = ({ items }: { items: Matter[] }) => {
   const { hasImpact } = useWorkspace();
   return (
@@ -121,7 +115,7 @@ export const MatterList = ({ items }: { items: Matter[] }) => {
           <span className="grow">
             <span className="matter-name">
               {m.name}
-              {m.sample && <SampleTag />}
+              <MatterTag matter={m} />
             </span>
             <small>
               {m.type} | {m.court}

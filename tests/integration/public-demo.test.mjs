@@ -48,7 +48,7 @@ test("a signed-out visitor enters the complete sample account without onboarding
   assert.equal(response.headers.get("cache-control"), "no-store");
   const data = await response.json();
   assert.equal(data.samples, "on");
-  assert.equal(data.matters.length, 5);
+  assert.equal(data.matters.length, 6);
   for (const key of [
     "documents",
     "notices",

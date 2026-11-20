@@ -45,7 +45,9 @@ export function demoAnswer(
   const prepared =
     matter.id === "anderson"
       ? "This demo has a prepared answer only for questions about the sample Nexora ruling, such as the suggested questions below."
-      : `This is a simulated research response for ${matter.name}.`;
+      : matter.id === "gonzalez"
+        ? "This demo has no AI answers for this public court record. A prepared, hand-checked analysis with pinpoint citations is in the Legal research workflow on the Overview tab."
+        : `This is a simulated research response for ${matter.name}.`;
   return {
     text: `${prepared} No live legal research was performed for this question, and no answer is given.\n\nIn a pilot account, Casevex searches the enabled public legal sources and states only claims whose quotations and support were checked, each linked to its source.\n\nRecommended next step\nTry one of the suggested questions, or ask this question again in a pilot account.`,
     sources: [],

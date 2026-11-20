@@ -11,6 +11,8 @@ import CaseSummaryCard from "./CaseSummaryCard";
 import AnalysisCard from "./AnalysisCard";
 import { CompareAction, ComparisonView } from "./PreparedComparison";
 import { preparedComparisonFor } from "@/lib/demo/prepared-comparison";
+import { SourceDocuments, WorkflowAction } from "./PublicRecord";
+import ResearchWorkflow from "./ResearchWorkflow";
 
 /** Matter overview: summary, issues, deadlines, documents. */
 export default function OverviewTab() {
@@ -33,17 +35,36 @@ export default function OverviewTab() {
   const analysisCard = (
     <AnalysisCard expandHref={expanded ? undefined : viewHref("analysis")} />
   );
+  const preparedDoc = documents.find((d) => d.id === prepared?.documentId);
   if (view === "compare" && prepared)
     return (
       <ComparisonView
         comparison={prepared.comparison}
         documentId={prepared.documentId}
-        documentName={
-          documents.find((d) => d.id === prepared.documentId)?.name ?? ""
-        }
+        documentName={preparedDoc?.name ?? ""}
+        publicUrl={preparedDoc?.publicUrl}
         backHref={viewHref()}
       />
     );
+  // The demo matter built from a public court record: no client, no
+  // deadlines, and a prepared (hand-checked) research workflow.
+  if (matter.publicRecord) {
+    if (view === "workflow") return <ResearchWorkflow backHref={viewHref()} />;
+    return (
+      <div className="page-body matter-grid">
+        <div className="stack">
+          {summaryCard}
+          <WorkflowAction href={viewHref("workflow")} />
+        </div>
+        <div className="stack">
+          {comparison && (
+            <CompareAction comparison={comparison} href={viewHref("compare")} />
+          )}
+          <SourceDocuments documents={documents} />
+        </div>
+      </div>
+    );
+  }
   if (expanded)
     return (
       <div className="page-body expanded-matter-view">

@@ -3,6 +3,11 @@ import { label, download } from "@/components/workspace/format";
 import { Chip } from "@/components/workspace/ui";
 import { useWorkspace } from "@/components/workspace/context";
 import { api } from "@/lib/api/client";
+import { courtRecordBySha } from "@/lib/demo/court-records";
+import {
+  OpenRecord,
+  Provenance,
+} from "@/components/workspace/matter/PublicRecord";
 
 const READING: Record<string, string> = {
   pending: "Upload not finished.",
@@ -18,6 +23,26 @@ export default function DocumentModal() {
   const d = data.documents.find((d) => d.id === selected);
   // Only real stored files carry a reading state; the demo has names only.
   const live = d?.processing !== undefined;
+  // Demo: a bundled public court record. Read-only, opened from the public file.
+  const record = d?.publicUrl ? courtRecordBySha(d.sha256) : null;
+  if (d && record)
+    return (
+      <>
+        <Chip>PDF · Public court record</Chip>
+        <h2>{d.name}</h2>
+        <p>
+          {nameOf(d.matterId)} · {(d.sizeBytes / 1000000).toFixed(2)} MB
+        </p>
+        <p className="demo-note">
+          The court’s own opinion, bundled unchanged with the demo and served as
+          a public, read-only file. It is not an uploaded client document.
+        </p>
+        <Provenance record={record} />
+        <div className="actions">
+          <OpenRecord record={record}>Open original PDF</OpenRecord>
+        </div>
+      </>
+    );
   return (
     d && (
       <>

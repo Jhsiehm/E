@@ -74,6 +74,8 @@ export default function DashboardPage() {
   const { router, data, question, setQuestion, practice, setPractice, notify } =
     useWorkspace();
   const first = data.matters[0]?.id;
+  // Demo only: the matter built from a public court record, if loaded.
+  const realCase = data.matters.find((m) => m.publicRecord);
   const { profile, layout } = useAccount();
   const firstName = (profile.fullName || profile.email).split(/[\s@]/)[0];
   const mine: string[] = profile.practiceAreas.map(
@@ -141,6 +143,19 @@ export default function DashboardPage() {
       )}
       <WelcomeCard />
       {data.notices.some((n) => n.kind === "ruling" && !n.read) && <Ruling />}
+      {realCase && (
+        <Link className="real-case-entry" href={`/matters/${realCase.id}`}>
+          <Icon name="court" />
+          <span className="grow">
+            <b>Explore a real court case</b>
+            <small>
+              Review a Second Circuit decision, compare judicial reasoning, and
+              inspect original sources.
+            </small>
+          </span>
+          <Icon name="arrow" size={16} />
+        </Link>
+      )}
       <div className="page-body dashboard-grid">
         {layout.cards.map((key) => (
           <DashCard key={key} id={key} />

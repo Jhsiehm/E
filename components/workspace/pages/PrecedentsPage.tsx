@@ -5,13 +5,13 @@ import { date } from "@/components/workspace/format";
 import {
   Chip,
   Card,
-  Foot,
   Empty,
   Filter,
   Search,
 } from "@/components/workspace/ui";
 import { Header } from "@/components/workspace/shared";
 import { useWorkspace } from "@/components/workspace/context";
+import PrecedentDetail from "./PrecedentDetail";
 
 /** Precedent library and detail view. */
 export default function PrecedentsPage() {
@@ -45,30 +45,7 @@ export default function PrecedentsPage() {
         }
       />
       {precedent ? (
-        <Card className="page-body">
-          <Link href="/precedents">← All precedents</Link>
-          <p>
-            {precedent.court} ·{" "}
-            {precedent.decidedAt ? date(precedent.decidedAt) : "Date pending"}
-          </p>
-          <Chip tone="rose">
-            {precedent.isSample
-              ? "Fictional sample authority"
-              : "Verification is simulated"}
-          </Chip>
-          <h2>Research note</h2>
-          <p>{precedent.holding}</p>
-          <div className="actions">
-            {precedent.topics.map((t) => (
-              <Chip key={t}>{t}</Chip>
-            ))}
-          </div>
-          <h3>Used in</h3>
-          <Link href="/matters/anderson">
-            Anderson v. Meridian Tech · Sample association
-          </Link>
-          <Foot />
-        </Card>
+        <PrecedentDetail precedent={precedent} />
       ) : (
         <>
           <div className="filters">
@@ -93,7 +70,7 @@ export default function PrecedentsPage() {
             <Filter
               name="date"
               title="Date"
-              options={["2026", "2018", "2017"]}
+              options={["2026", "2023", "2018", "2017", "2016"]}
             />
             <button className="text-button" onClick={clear}>
               Clear filters
@@ -120,12 +97,15 @@ export default function PrecedentsPage() {
                       {p.court} ·{" "}
                       {p.decidedAt ? date(p.decidedAt) : "Date pending"}
                       {p.isSample ? " · Fictional sample" : ""}
+                      {p.record ? " · Public court record" : ""}
                     </p>
                     <small className="verified">
                       <i className="square" />
-                      {p.verified
-                        ? "Verified against the opinion (simulated)"
-                        : "Awaiting verification"}
+                      {p.record
+                        ? "Holding quoted from the bundled opinion"
+                        : p.verified
+                          ? "Verified against the opinion (simulated)"
+                          : "Awaiting verification"}
                     </small>
                     <span className="topic-list">
                       {p.topics.map((t) => (
